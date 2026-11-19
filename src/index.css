@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-buttercream: #FFE0AF;
+    --color-dustyrose: #F1B4B1;
+    --color-softmauve: #C6A8CE;
+    --color-mistylavender: #C1BECE;
+    --color-warmtaupe: #C6BEA7;
+    --color-sagegreen: #939F7F;
+    --color-bg: #B8D5B6;
+    --color-card: #E8F2E6;
+    --color-text: #1B2B1D;
+    --color-secondary: #3D553F;
+  }
+
+  .dark {
+    --color-bg: #121914;
+    --color-card: #1C251F;
+    --color-text: #F0F5EE;
+    --color-secondary: #9EB0A1;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  code, pre {
+    font-family: 'Fira Code', monospace;
+  }
+}
+
+/* Eye-strain relief: replace harsh bright white with soft soothing matcha cream */
+.bg-white {
+  background-color: #E8F2E6 !important;
+}
+
+.dark .bg-white {
+  background-color: #1C251F !important;
+}
+
+body,
+#root,
+.bg-garden-bg {
+  background-color: #B8D5B6 !important;
+}
+
+.dark body,
+.dark #root,
+.dark .bg-garden-darkbg {
+  background-color: #121914 !important;
+}
+
+/* Custom scrollbars with garden aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #A2C49F;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7F9E7C;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #2E3A32;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4A5D50;
+}
+
+/* Botanical subtle pattern overlay with pastel sage tint */
+.garden-pattern {
+  background-image: radial-gradient(rgba(45, 80, 42, 0.16) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.dark .garden-pattern {
+  background-image: radial-gradient(rgba(147, 159, 127, 0.10) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
