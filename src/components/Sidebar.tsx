@@ -5,7 +5,6 @@ import {
   Compass,
   Boxes,
   PlayCircle,
-  Columns,
   Calendar,
   Flower2,
   RotateCcw,
@@ -48,19 +47,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
   streak,
   xp,
 }) => {
-  const navItems = [
-    { id: 'home' as NavPage, label: 'Home', icon: Home, badge: null },
-    { id: 'learning-path' as NavPage, label: 'Learning Path', icon: Map, badge: '15 Levels' },
-    { id: 'explore' as NavPage, label: 'Explore Algorithms', icon: Compass, badge: null },
-    { id: 'data-structures' as NavPage, label: 'Data Structures', icon: Boxes, badge: 'Interactive' },
-    { id: 'playground' as NavPage, label: 'Playground', icon: PlayCircle, badge: 'Sandbox' },
-    { id: 'compare' as NavPage, label: 'Compare Lab', icon: Columns, badge: null },
-    { id: 'daily-challenges' as NavPage, label: 'Daily Challenges', icon: Calendar, badge: 'XP' },
-    { id: 'garden' as NavPage, label: 'My Learning Garden', icon: Flower2, badge: '🌷' },
-    { id: 'revision' as NavPage, label: 'Revision Center', icon: RotateCcw, badge: null },
-    { id: 'achievements' as NavPage, label: 'Achievements', icon: Award, badge: null },
-    { id: 'bookmarks' as NavPage, label: 'Bookmarks', icon: Bookmark, badge: null },
-    { id: 'settings' as NavPage, label: 'Settings', icon: Settings, badge: null },
+  // 3 Clear Beginner-Friendly Navigation Sections
+  const navSections = [
+    {
+      title: 'LEARN',
+      items: [
+        { id: 'home' as NavPage, label: 'Home', icon: Home, badge: null },
+        { id: 'learning-path' as NavPage, label: 'My Learning Path', icon: Map, badge: '15 Levels' },
+        { id: 'explore' as NavPage, label: 'Explore Algorithms', icon: Compass, badge: null },
+        { id: 'data-structures' as NavPage, label: 'Data Structures', icon: Boxes, badge: null },
+      ],
+    },
+    {
+      title: 'PRACTICE',
+      items: [
+        { id: 'playground' as NavPage, label: 'Playground', icon: PlayCircle, badge: 'Sandbox' },
+        { id: 'daily-challenges' as NavPage, label: 'Daily Challenges', icon: Calendar, badge: null },
+        { id: 'revision' as NavPage, label: 'Revision Center', icon: RotateCcw, badge: null },
+      ],
+    },
+    {
+      title: 'YOUR GARDEN',
+      items: [
+        { id: 'garden' as NavPage, label: 'My Learning Garden', icon: Flower2, badge: '🌷' },
+        { id: 'achievements' as NavPage, label: 'Achievements', icon: Award, badge: null },
+        { id: 'bookmarks' as NavPage, label: 'Bookmarks', icon: Bookmark, badge: null },
+        { id: 'settings' as NavPage, label: 'Settings', icon: Settings, badge: null },
+      ],
+    },
   ];
 
   const handleItemClick = (page: NavPage) => {
@@ -108,6 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={onCloseMobile}
               className="lg:hidden p-1.5 rounded-xl text-garden-secondary hover:text-garden-text hover:bg-garden-bg"
+              aria-label="Close menu"
             >
               <X size={18} />
             </button>
@@ -126,46 +141,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* Nav List */}
-          <nav className="px-3 py-1 space-y-1 overflow-y-auto max-h-[calc(100vh-220px)] scrollbar-thin">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-dustyrose text-garden-text font-semibold shadow-sm'
-                      : 'text-garden-secondary dark:text-garden-darksecondary hover:text-garden-text dark:hover:text-garden-darktext hover:bg-white/60 dark:hover:bg-garden-hover'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon size={17} className={isActive ? 'text-garden-text' : 'text-garden-secondary'} />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+          {/* Grouped Nav Sections */}
+          <nav className="px-3 py-1 space-y-4 overflow-y-auto max-h-[calc(100vh-230px)] scrollbar-thin">
+            {navSections.map((section) => (
+              <div key={section.title} className="space-y-1">
+                {/* Subtle Section Label */}
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-garden-secondary/80 dark:text-garden-darksecondary/80 px-3.5 pt-1 pb-1">
+                  {section.title}
+                </div>
+
+                {/* Section Nav Items */}
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentPage === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleItemClick(item.id)}
+                      className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
                         isActive
-                          ? 'bg-white/40 text-garden-text'
-                          : 'bg-garden-cardborder/60 dark:bg-garden-darkcardborder text-garden-secondary'
+                          ? 'bg-dustyrose text-garden-text font-semibold shadow-sm'
+                          : 'text-garden-secondary dark:text-garden-darksecondary hover:text-garden-text dark:hover:text-garden-darktext hover:bg-white/60 dark:hover:bg-garden-hover'
                       }`}
                     >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                      <div className="flex items-center gap-3">
+                        <Icon size={16} className={isActive ? 'text-garden-text' : 'text-garden-secondary'} />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.badge && (
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            isActive
+                              ? 'bg-white/40 text-garden-text'
+                              : 'bg-garden-cardborder/60 dark:bg-garden-darkcardborder text-garden-secondary'
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </div>
 
         {/* Botanical Footer Motto */}
         <div className="p-4 border-t border-garden-cardborder/60 dark:border-garden-darkcardborder/60 text-center">
           <p className="text-[11px] text-garden-secondary dark:text-garden-darksecondary italic">
-            "Every algorithm begins with curiosity. Let's help it bloom. 🌸"
+            "One tiny step today. Let's bloom together. 🌸"
           </p>
         </div>
       </aside>
