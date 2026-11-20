@@ -14,6 +14,9 @@ import {
   Settings,
   X,
   Sparkles,
+  Trophy,
+  Users,
+  Zap,
 } from 'lucide-react';
 
 export type NavPage =
@@ -29,6 +32,9 @@ export type NavPage =
   | 'achievements'
   | 'bookmarks'
   | 'settings'
+  | 'leaderboard'
+  | 'guilds'
+  | 'algo-race'
   | 'lesson-detail';
 
 export interface SidebarProps {
@@ -52,19 +58,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
   streak,
   xp,
 }) => {
-  const navItems = [
-    { id: 'home' as NavPage, label: 'Home', icon: Home, badge: null },
-    { id: 'learning-path' as NavPage, label: 'Learning Path', icon: Map, badge: '15 Levels' },
-    { id: 'explore' as NavPage, label: 'Explore Algorithms', icon: Compass, badge: null },
-    { id: 'data-structures' as NavPage, label: 'Data Structures', icon: Boxes, badge: 'Interactive' },
-    { id: 'playground' as NavPage, label: 'Playground', icon: PlayCircle, badge: 'Sandbox' },
-    { id: 'compare' as NavPage, label: 'Compare Lab', icon: Columns, badge: null },
-    { id: 'daily-challenges' as NavPage, label: 'Daily Challenges', icon: Calendar, badge: 'XP' },
-    { id: 'garden' as NavPage, label: 'My Learning Garden', icon: Flower2, badge: '🌷' },
-    { id: 'revision' as NavPage, label: 'Revision Center', icon: RotateCcw, badge: null },
-    { id: 'achievements' as NavPage, label: 'Achievements', icon: Award, badge: null },
-    { id: 'bookmarks' as NavPage, label: 'Bookmarks', icon: Bookmark, badge: null },
-    { id: 'settings' as NavPage, label: 'Settings', icon: Settings, badge: null },
+  // 3 Clear Beginner-Friendly Navigation Sections
+  const navSections = [
+    {
+      title: 'LEARN',
+      items: [
+        { id: 'home' as NavPage, label: 'Home', icon: Home, badge: null },
+        { id: 'learning-path' as NavPage, label: 'My Learning Path', icon: Map, badge: '15 Levels' },
+        { id: 'explore' as NavPage, label: 'Explore Algorithms', icon: Compass, badge: null },
+        { id: 'data-structures' as NavPage, label: 'Data Structures', icon: Boxes, badge: 'Interactive' },
+      ],
+    },
+    {
+      title: 'PRACTICE',
+      items: [
+        { id: 'playground' as NavPage, label: 'Playground', icon: PlayCircle, badge: 'Sandbox' },
+        { id: 'algo-race' as NavPage, label: 'Algo Race', icon: Zap, badge: 'Live' },
+        { id: 'compare' as NavPage, label: 'Compare Lab', icon: Columns, badge: null },
+        { id: 'daily-challenges' as NavPage, label: 'Daily Challenges', icon: Calendar, badge: 'XP' },
+        { id: 'revision' as NavPage, label: 'Revision Center', icon: RotateCcw, badge: null },
+      ],
+    },
+    {
+      title: 'YOUR GARDEN & COMMUNITY',
+      items: [
+        { id: 'garden' as NavPage, label: 'My Learning Garden', icon: Flower2, badge: '🌷' },
+        { id: 'leaderboard' as NavPage, label: 'Leaderboard', icon: Trophy, badge: null },
+        { id: 'guilds' as NavPage, label: 'Guilds', icon: Users, badge: null },
+        { id: 'achievements' as NavPage, label: 'Achievements', icon: Award, badge: null },
+        { id: 'bookmarks' as NavPage, label: 'Bookmarks', icon: Bookmark, badge: null },
+        { id: 'settings' as NavPage, label: 'Settings', icon: Settings, badge: null },
+      ],
+    },
   ];
 
   const handleItemClick = (page: NavPage) => {
@@ -167,58 +192,75 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* Nav List */}
-          <nav className="px-2 sm:px-3 py-1 space-y-1 overflow-y-auto max-h-[calc(100vh-230px)] scrollbar-thin">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              const tooltipText = `${item.label}${item.badge ? ` (${item.badge})` : ''}`;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  title={isCompact ? tooltipText : undefined}
-                  className={`w-full flex items-center rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 relative group ${
-                    isCompact ? 'lg:justify-center lg:px-2 lg:py-2.5' : 'justify-between px-3.5 py-2.5'
-                  } ${
-                    isActive
-                      ? 'bg-dustyrose text-garden-text font-semibold shadow-sm'
-                      : 'text-garden-secondary dark:text-garden-darksecondary hover:text-garden-text dark:hover:text-garden-darktext hover:bg-white/60 dark:hover:bg-garden-darkhover'
+          {/* Grouped Nav Sections */}
+          <nav className="px-2 sm:px-3 py-1 space-y-3 overflow-y-auto max-h-[calc(100vh-230px)] scrollbar-thin">
+            {navSections.map((section) => (
+              <div key={section.title} className="space-y-1">
+                {/* Section title (hidden when compact) */}
+                <div
+                  className={`text-[10px] font-extrabold uppercase tracking-wider text-garden-secondary/80 dark:text-garden-darksecondary/80 px-3.5 pt-1 pb-1 transition-all ${
+                    isCompact ? 'lg:hidden' : 'block'
                   }`}
                 >
-                  <div className={`flex items-center gap-3 ${isCompact ? 'lg:justify-center' : ''}`}>
-                    <Icon
-                      size={18}
-                      className={`flex-shrink-0 transition-transform group-hover:scale-110 ${
-                        isActive ? 'text-garden-text' : 'text-garden-secondary dark:text-garden-darksecondary group-hover:text-garden-text'
-                      }`}
-                    />
-                    <span
-                      className={`whitespace-nowrap transition-all duration-200 ${
-                        isCompact ? 'lg:hidden' : 'inline'
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                  </div>
+                  {section.title}
+                </div>
 
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap transition-all duration-200 ${
-                        isCompact ? 'lg:hidden' : 'inline'
+                {isCompact && (
+                  <div className="hidden lg:block my-2 border-t border-garden-cardborder/40 dark:border-garden-darkcardborder/40 first:hidden" />
+                )}
+
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentPage === item.id;
+                  const tooltipText = `${item.label}${item.badge ? ` (${item.badge})` : ''}`;
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleItemClick(item.id)}
+                      title={isCompact ? tooltipText : undefined}
+                      className={`w-full flex items-center rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 relative group ${
+                        isCompact ? 'lg:justify-center lg:px-2 lg:py-2.5' : 'justify-between px-3.5 py-2'
                       } ${
                         isActive
-                          ? 'bg-white/40 text-garden-text'
-                          : 'bg-garden-cardborder/60 dark:bg-garden-darkcardborder text-garden-secondary dark:text-garden-darksecondary'
+                          ? 'bg-dustyrose text-garden-text font-semibold shadow-sm'
+                          : 'text-garden-secondary dark:text-garden-darksecondary hover:text-garden-text dark:hover:text-garden-darktext hover:bg-white/60 dark:hover:bg-garden-darkhover'
                       }`}
                     >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                      <div className={`flex items-center gap-3 ${isCompact ? 'lg:justify-center' : ''}`}>
+                        <Icon
+                          size={17}
+                          className={`flex-shrink-0 transition-transform group-hover:scale-110 ${
+                            isActive ? 'text-garden-text' : 'text-garden-secondary dark:text-garden-darksecondary group-hover:text-garden-text'
+                          }`}
+                        />
+                        <span
+                          className={`whitespace-nowrap transition-all duration-200 ${
+                            isCompact ? 'lg:hidden' : 'inline'
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+
+                      {item.badge && (
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap transition-all duration-200 ${
+                            isCompact ? 'lg:hidden' : 'inline'
+                          } ${
+                            isActive
+                              ? 'bg-white/40 text-garden-text'
+                              : 'bg-garden-cardborder/60 dark:bg-garden-darkcardborder text-garden-secondary dark:text-garden-darksecondary'
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </div>
 
@@ -230,7 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           {isCompact ? (
             <div
-              title="Every algorithm begins with curiosity. Let's help it bloom. 🌸"
+              title="One tiny step today. Let's bloom together. 🌸"
               className="hidden lg:flex justify-center items-center cursor-default text-lg"
             >
               🌸
@@ -241,7 +283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               isCompact ? 'lg:hidden' : 'block'
             }`}
           >
-            "Every algorithm begins with curiosity. Let's help it bloom. 🌸"
+            "One tiny step today. Let's bloom together. 🌸"
           </p>
         </div>
       </aside>

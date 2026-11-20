@@ -171,6 +171,14 @@ export interface AlgorithmLesson {
   relearn: RelearnContent;
 }
 
+export interface TopicMetadata {
+  id: string;
+  title: string;
+  isAlgorithm: boolean;
+  algorithmId?: string;
+  shortDescription: string;
+}
+
 export interface LevelMetadata {
   level: number;
   title: string;
@@ -181,13 +189,7 @@ export interface LevelMetadata {
   iconName: string;
   gardenArea: string;
   color: string;
-  topics: {
-    id: string;
-    title: string;
-    isAlgorithm: boolean;
-    algorithmId?: string;
-    shortDescription: string;
-  }[];
+  topics: TopicMetadata[];
 }
 
 export interface UserProgress {

@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
-import {
-  Flower2,
-  Sparkles,
-  Flame,
-  Award,
-  Sun,
-  Droplets,
-  Sprout,
-  Compass,
-} from 'lucide-react';
 import { UserProgress } from '../types';
-import { ACHIEVEMENTS } from '../services/progressService';
+import { GARDEN_REGIONS, GardenMilestone } from '../components/garden/gardenData';
+import { GardenStatsHeader } from '../components/garden/GardenStatsHeader';
+import { GardenRegionView } from '../components/garden/GardenRegionView';
+import { MilestoneModal } from '../components/garden/MilestoneModal';
+import { AchievementsShowcase } from '../components/garden/AchievementsShowcase';
+import { IllustratedGardenMap } from '../components/garden/IllustratedGardenMap';
+import { Map, Footprints, Award, Sparkles, Compass } from 'lucide-react';
 
 interface GardenPageProps {
   progress: UserProgress;
@@ -18,218 +14,168 @@ interface GardenPageProps {
 }
 
 export const GardenPage: React.FC<GardenPageProps> = ({ progress, onSelectLesson }) => {
-  const [selectedGardenPlot, setSelectedGardenPlot] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'illustrated-map' | 'adventure-path' | 'achievements'>('illustrated-map');
+  const [selectedMilestone, setSelectedMilestone] = useState<GardenMilestone | null>(null);
+  const [activeRegionId, setActiveRegionId] = useState<string>('nursery');
 
-  const bloomedCount = progress.gardenPlants.filter((p) => p.stage === 'bloomed').length;
-  const sproutCount = progress.gardenPlants.filter((p) => p.stage === 'sprout').length;
-  const seedCount = progress.gardenPlants.filter((p) => p.stage === 'seed').length;
-
-  const gardenAreas = [
-    { id: 'all', name: 'Full Garden Estate', icon: '🏡' },
-    { id: 'nursery', name: 'Seedling Nursery (Foundations)', icon: '🌱' },
-    { id: 'terrace', name: 'Terrace Steps (Sorting & Searching)', icon: '🪴' },
-    { id: 'courtyard', name: 'Vine Courtyard (Graphs & Trees)', icon: '🌿' },
-    { id: 'pavilion', name: 'Woven Floral Pavilion (DP & Greedy)', icon: '🌺' },
-  ];
-
-  const getFlowerEmoji = (type: string, stage: string) => {
-    if (stage === 'seed') return '🌱';
-    if (stage === 'sprout') return '🌿';
-    switch (type) {
-      case 'rose':
-        return '🌹';
-      case 'cherry-blossom':
-        return '🌸';
-      case 'lotus':
-        return '🪷';
-      case 'sunflower':
-        return '🌻';
-      case 'tulip':
-        return '🌷';
-      case 'orchid':
-        return '🌺';
-      case 'daisy':
-        return '🌼';
-      default:
-        return '🌸';
+  const handleJumpToRegion = (regionId: string) => {
+    setActiveRegionId(regionId);
+    if (activeTab !== 'adventure-path') {
+      setActiveTab('adventure-path');
     }
+    setTimeout(() => {
+      const el = document.getElementById(regionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
+  const getMilestoneStatus = (milestone: GardenMilestone | null): 'not-started' | 'in-progress' | 'completed' | 'mastered' => {
+    if (!milestone) return 'not-started';
+    if (progress.masteredAlgorithms.includes(milestone.algorithmId)) {
+      return 'mastered';
+    }
+    if (progress.completedLessons.includes(milestone.algorithmId)) {
+      return 'completed';
+    }
+    const plant = progress.gardenPlants.find((p) => p.algorithmId === milestone.algorithmId);
+    if (plant && (plant.stage === 'sprout' || plant.stage === 'bloomed')) {
+      return plant.stage === 'bloomed' ? 'completed' : 'in-progress';
+    }
+    return 'not-started';
   };
 
   return (
-    <div className="max-w-6xl mx-auto pb-24 flex flex-col gap-8">
-      {/* Header Banner */}
-      <section className="relative overflow-hidden p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-buttercream/40 via-dustyrose/30 to-sagegreen/30 dark:from-buttercream/15 dark:via-dustyrose/15 dark:to-sagegreen/15 border border-garden-cardborder dark:border-garden-darkcardborder shadow-garden flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-3 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 dark:bg-garden-darkcard/70 border border-garden-cardborder text-xs font-semibold text-garden-text">
-            <span>🌷</span>
-            <span>Personal Botanical Progress Sanctuary</span>
-          </div>
-          <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-garden-text dark:text-garden-darktext tracking-tight">
-            My Learning Garden
-          </h1>
-          <p className="text-sm sm:text-base text-garden-secondary max-w-lg leading-relaxed">
-            Every computer science concept you explore takes root here. Maintain your streak to attract pollinators and watch your knowledge burst into bloom.
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto pb-28 flex flex-col gap-8">
+      {/* Botanical World Progress Header */}
+      <GardenStatsHeader
+        progress={progress}
+        onJumpToRegion={handleJumpToRegion}
+        activeRegionId={activeRegionId}
+      />
 
-        {/* Garden Statistics Wheel */}
-        <div className="flex items-center gap-3">
-          <div className="p-4 rounded-2xl bg-white/80 dark:bg-garden-darkcard/80 border border-garden-cardborder text-center">
-            <span className="font-heading font-extrabold text-2xl text-sagegreen block">
-              {bloomedCount}
-            </span>
-            <span className="text-[11px] font-semibold text-garden-secondary">Bloomed</span>
-          </div>
-          <div className="p-4 rounded-2xl bg-white/80 dark:bg-garden-darkcard/80 border border-garden-cardborder text-center">
-            <span className="font-heading font-extrabold text-2xl text-dustyrose block">
-              {sproutCount}
-            </span>
-            <span className="text-[11px] font-semibold text-garden-secondary">Sprouting</span>
-          </div>
-          <div className="p-4 rounded-2xl bg-white/80 dark:bg-garden-darkcard/80 border border-garden-cardborder text-center">
-            <span className="font-heading font-extrabold text-2xl text-amber-600 block">
-              {progress.streak}d
-            </span>
-            <span className="text-[11px] font-semibold text-garden-secondary">Butterflies 🦋</span>
-          </div>
-        </div>
-      </section>
+      {/* Primary Experience Mode Tabs */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/80 dark:bg-garden-darkcard/80 border-2 border-garden-cardborder w-fit shadow-sm">
+        <button
+          onClick={() => setActiveTab('illustrated-map')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'illustrated-map'
+              ? 'bg-dustyrose text-garden-text shadow-sm scale-105'
+              : 'text-garden-secondary hover:text-garden-text hover:bg-white/60'
+          }`}
+        >
+          <Compass size={16} />
+          <span>Illustrated Storybook Garden Map 🌸</span>
+        </button>
 
-      {/* Butterflies and Bees Flutter Banner when streak >= 3 */}
-      {progress.streak >= 3 && (
-        <div className="p-4 rounded-2xl bg-buttercream/30 border border-buttercream-400 flex items-center justify-between gap-4 text-xs sm:text-sm font-semibold text-amber-950 animate-pulseSubtle">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🦋 🐝 🦋</span>
-            <span>
-              Your {progress.streak}-day streak has attracted butterflies and honeybees to your garden!
-            </span>
+        <button
+          onClick={() => setActiveTab('adventure-path')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'adventure-path'
+              ? 'bg-dustyrose text-garden-text shadow-sm scale-105'
+              : 'text-garden-secondary hover:text-garden-text hover:bg-white/60'
+          }`}
+        >
+          <Footprints size={16} />
+          <span>Regional Winding Pathway (7 Areas)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('achievements')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'achievements'
+              ? 'bg-dustyrose text-garden-text shadow-sm scale-105'
+              : 'text-garden-secondary hover:text-garden-text hover:bg-white/60'
+          }`}
+        >
+          <Award size={16} />
+          <span>Botanical Badges ({progress.achievements.length})</span>
+        </button>
+      </div>
+
+      {/* MODE 1: ILLUSTRATED STORYBOOK GARDEN MAP (Matching the Exact Reference Art) */}
+      {activeTab === 'illustrated-map' && (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-2">
+            <div>
+              <h2 className="font-heading font-extrabold text-2xl text-garden-text dark:text-garden-darktext flex items-center gap-2">
+                <span>🌸</span> The Storybook Botanical Garden World
+              </h2>
+              <p className="text-xs sm:text-sm text-garden-secondary mt-0.5">
+                Twin wooden bridges, white river stepping stones, winding stone pathways, and the sacred cherry blossom shrine of mastery.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-sagegreen">
+              <span className="w-2.5 h-2.5 rounded-full bg-sagegreen animate-ping" />
+              <span>Click any stepping stone milestone to open lore & start learning</span>
+            </div>
           </div>
-          <span className="px-2.5 py-0.5 rounded-full bg-buttercream font-bold">
-            Garden Flora Thriving
-          </span>
+
+          {/* Interactive Illustrated Reference Map Canvas */}
+          <IllustratedGardenMap progress={progress} onSelectLesson={onSelectLesson} />
         </div>
       )}
 
-      {/* Garden Area Filter Pills */}
-      <div className="flex flex-wrap gap-2">
-        {gardenAreas.map((area) => (
-          <button
-            key={area.id}
-            onClick={() => setSelectedGardenPlot(area.id)}
-            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
-              selectedGardenPlot === area.id
-                ? 'bg-dustyrose text-garden-text font-bold shadow-sm'
-                : 'bg-white dark:bg-garden-darkcard border border-garden-cardborder text-garden-secondary hover:text-garden-text'
-            }`}
-          >
-            <span>{area.icon}</span>
-            <span>{area.name}</span>
-          </button>
-        ))}
-      </div>
+      {/* MODE 2: THE WINDING ADVENTURE GARDEN PATHWAY (Detailed 7 Regions View) */}
+      {activeTab === 'adventure-path' && (
+        <div className="flex flex-col gap-10">
+          <div className="flex items-center justify-between px-2">
+            <div>
+              <h2 className="font-heading font-extrabold text-2xl text-garden-text dark:text-garden-darktext flex items-center gap-2">
+                <span>🌷</span> The 7 Botanical Learning Regions
+              </h2>
+              <p className="text-xs sm:text-sm text-garden-secondary mt-0.5">
+                Scroll through the 7 garden regions connected by a winding cobblestone trail. Each stepping stone is a milestone that grows from seed to full bloom.
+              </p>
+            </div>
 
-      {/* Visual Garden Bed Grid */}
-      <section className="p-8 rounded-3xl bg-white dark:bg-garden-darkcard border border-garden-cardborder dark:border-garden-darkcardborder shadow-garden flex flex-col gap-6">
-        <div className="flex items-center justify-between pb-4 border-b border-garden-cardborder">
-          <h2 className="font-heading font-bold text-xl text-garden-text dark:text-garden-darktext flex items-center gap-2">
-            <span>🌿</span> Cultivated Flowerbeds
-          </h2>
-          <span className="text-xs text-garden-secondary font-medium">
-            {progress.gardenPlants.length} Plants in Soil
-          </span>
-        </div>
-
-        {/* Flowerbeds Canvas Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {progress.gardenPlants.map((plant) => (
-            <div
-              key={plant.id}
-              onClick={() => onSelectLesson(plant.algorithmId)}
-              className="p-4 rounded-2xl bg-garden-bg dark:bg-garden-darkbg border border-garden-cardborder hover:border-dustyrose hover:shadow-garden-lg cursor-pointer transition-all duration-300 flex flex-col items-center text-center gap-2 group relative"
-            >
-              {/* Floating Flower Icon */}
-              <div className="w-16 h-16 rounded-full bg-white dark:bg-garden-darkcard border border-garden-cardborder/80 flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform">
-                {getFlowerEmoji(plant.flowerType, plant.stage)}
-              </div>
-
-              {/* Plant Name */}
-              <h4 className="font-heading font-bold text-xs text-garden-text dark:text-garden-darktext line-clamp-1 group-hover:text-dustyrose-600 transition-colors">
-                {plant.name}
-              </h4>
-
-              {/* Stage Badge */}
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                  plant.stage === 'bloomed'
-                    ? 'bg-sagegreen/20 text-sagegreen-500'
-                    : plant.stage === 'sprout'
-                    ? 'bg-dustyrose/20 text-dustyrose-700'
-                    : 'bg-buttercream/50 text-amber-900'
-                }`}
-              >
-                {plant.stage}
+            <div className="hidden sm:flex items-center gap-4 text-xs text-garden-secondary font-semibold">
+              <span className="flex items-center gap-1.5">
+                <span>🌰</span> Seed
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span>🌱</span> Sprout
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span>🌷</span> Bloomed
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span>✨🌸</span> Mastered
               </span>
             </div>
-          ))}
+          </div>
 
-          {/* Plant Seed Placeholder slot */}
-          <div
-            onClick={() => onSelectLesson('binary-search')}
-            className="p-4 rounded-2xl border-2 border-dashed border-garden-cardborder hover:border-dustyrose flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-colors p-6 min-h-[140px]"
-          >
-            <div className="w-12 h-12 rounded-full bg-garden-bg flex items-center justify-center text-xl text-garden-secondary">
-              +
-            </div>
-            <span className="text-xs font-semibold text-garden-secondary">Plant New Seed</span>
+          {/* Sequential 7 Garden Regions along the Winding Trail */}
+          <div className="flex flex-col gap-12">
+            {GARDEN_REGIONS.map((region, idx) => (
+              <GardenRegionView
+                key={region.id}
+                region={region}
+                progress={progress}
+                onSelectMilestone={(m) => setSelectedMilestone(m)}
+                isFirst={idx === 0}
+                isLast={idx === GARDEN_REGIONS.length - 1}
+              />
+            ))}
           </div>
         </div>
-      </section>
+      )}
 
-      {/* Botanical Badges Showcase */}
-      <section className="p-8 rounded-3xl bg-white dark:bg-garden-darkcard border border-garden-cardborder dark:border-garden-darkcardborder shadow-garden flex flex-col gap-6">
-        <h2 className="font-heading font-bold text-xl text-garden-text dark:text-garden-darktext flex items-center gap-2">
-          <span>🏆</span> Botanical Achievement Badges
-        </h2>
+      {/* MODE 3: BOTANICAL ACHIEVEMENTS SHOWCASE */}
+      {activeTab === 'achievements' && (
+        <AchievementsShowcase progress={progress} />
+      )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {ACHIEVEMENTS.map((ach) => {
-            const isUnlocked = progress.achievements.includes(ach.id);
-            return (
-              <div
-                key={ach.id}
-                className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
-                  isUnlocked
-                    ? 'bg-gradient-to-br from-white to-garden-bg dark:from-garden-darkcard dark:to-garden-darkbg border-dustyrose shadow-sm'
-                    : 'bg-garden-bg/40 dark:bg-garden-darkbg/40 border-garden-cardborder/60 opacity-60'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-buttercream/40 flex items-center justify-center text-2xl shadow-sm shrink-0">
-                    {ach.icon}
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-xs sm:text-sm text-garden-text dark:text-garden-darktext">
-                      {ach.title}
-                    </h4>
-                    <span className="text-[10px] text-sagegreen font-bold">+{ach.xpReward} XP</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-garden-secondary leading-relaxed">
-                  {ach.description}
-                </p>
-
-                <div className="pt-2 border-t border-garden-cardborder/40 text-[11px] font-semibold flex items-center justify-between">
-                  <span className={isUnlocked ? 'text-sagegreen font-bold' : 'text-garden-secondary'}>
-                    {isUnlocked ? '✓ Unlocked' : 'Locked'}
-                  </span>
-                  <span>Flower: {ach.flowerReward}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      {/* Interactive Milestone Storybook Popup Modal for Adventure View */}
+      {selectedMilestone && (
+        <MilestoneModal
+          milestone={selectedMilestone}
+          status={getMilestoneStatus(selectedMilestone)}
+          onClose={() => setSelectedMilestone(null)}
+          onStartLesson={(algoId) => onSelectLesson(algoId)}
+        />
+      )}
     </div>
   );
 };
