@@ -491,6 +491,7 @@ export function generateQuickSortTrace(input: number[]): TraceStep[] {
       description: `Placed pivot ${pivot} into its exact sorted position at index ${pivotIndex}.`,
       array: [...arr],
       highlightedIndices: [pivotIndex],
+      swappedIndices: pivotIndex !== high ? [pivotIndex, high] : undefined,
       sortedIndices: [pivotIndex],
       pointers: { pivotFinal: pivotIndex },
       comparisonsCount: comparisons,

@@ -206,7 +206,7 @@ export const ComparePage: React.FC = () => {
               <span>{meta.titleA}</span>
               <span className="font-mono text-xs">{meta.timeA}</span>
             </div>
-            <ArrayBarVisualizer currentStep={currentStepA} />
+            <ArrayBarVisualizer currentStep={currentStepA} speedMs={900} />
             <p className="text-xs text-garden-secondary p-2 bg-white dark:bg-garden-darkcard rounded-xl border border-garden-cardborder">
               {currentStepA.description}
             </p>
@@ -218,7 +218,7 @@ export const ComparePage: React.FC = () => {
               <span>{meta.titleB}</span>
               <span className="font-mono text-xs">{meta.timeB}</span>
             </div>
-            <ArrayBarVisualizer currentStep={currentStepB} />
+            <ArrayBarVisualizer currentStep={currentStepB} speedMs={900} />
             <p className="text-xs text-garden-secondary p-2 bg-white dark:bg-garden-darkcard rounded-xl border border-garden-cardborder">
               {currentStepB.description}
             </p>

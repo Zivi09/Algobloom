@@ -14,6 +14,7 @@ import {
 import { CURRICULUM_LEVELS } from '../curriculum/levels';
 import { UserProgress, TopicMetadata } from '../types';
 import { ALL_LESSONS, LESSONS_BY_ID } from '../curriculum/lessons';
+import { LivingGardenPathMap } from '../components/garden/LivingGardenPathMap';
 
 interface LearningPathPageProps {
   progress: UserProgress;
@@ -31,32 +32,6 @@ export const LearningPathPage: React.FC<LearningPathPageProps> = ({
   // Default to expanding the level where the learner is currently active
   const initialLevel = nextLesson ? nextLesson.level : 0;
   const [expandedLevel, setExpandedLevel] = useState<number>(initialLevel);
-  const [hoveredWaypoint, setHoveredWaypoint] = useState<number | null>(null);
-
-  // Exact 15 waypoints carefully mapped along the winding path of sprout-garden-path.jpg (857x467)
-  const PATH_WAYPOINTS = [
-    { x: 350, y: 440, name: 'The Nursery Gate', level: 0 },
-    { x: 290, y: 448, name: 'Lower Meadow Path', level: 0 },
-    { x: 230, y: 442, name: 'Data Structure Basin', level: 1 },
-    { x: 170, y: 418, name: 'Pond Bank Walkway', level: 1 },
-    { x: 120, y: 372, name: 'Linear Search Shore', level: 2 },
-    { x: 95, y: 310, name: 'Binary Search Curve', level: 2 },
-    { x: 105, y: 245, name: 'Sorting Meadow Ridge', level: 3 },
-    { x: 140, y: 190, name: 'Quick Sort Fork', level: 3 },
-    { x: 195, y: 165, name: 'Complexity Ascent', level: 4 },
-    { x: 260, y: 175, name: 'Recursion Glade', level: 5 },
-    { x: 330, y: 195, name: 'Divide & Conquer Way', level: 6 },
-    { x: 405, y: 170, name: 'The Treehouse Grove', level: 7 }, // The exact Sprout position in the painting!
-    { x: 480, y: 230, name: 'Graphwood Forest', level: 8 },
-    { x: 560, y: 275, name: 'Dynamic Bloom Gardens', level: 10 },
-    { x: 640, y: 300, name: 'The Algorithmic Castle', level: 14 },
-  ];
-
-  const currentLevelIndex = Math.min(
-    PATH_WAYPOINTS.length - 1,
-    Math.max(0, initialLevel)
-  );
-  const currentPos = PATH_WAYPOINTS[currentLevelIndex];
 
   // Fallback map to ensure every topic has a rich interactive lesson to explore
   const LEVEL_DEFAULT_LESSON: Record<number, string> = {
@@ -112,161 +87,14 @@ export const LearningPathPage: React.FC<LearningPathPageProps> = ({
         </p>
       </div>
 
-      {/* 2. THE EXACT WATERCOLOR ILLUSTRATION WITH INTERACTIVE "YOU ARE HERE" TRAIL */}
-      <div className="space-y-2">
-        <div className="relative w-full rounded-3xl overflow-hidden border-2 border-[#D8E6BE] dark:border-[#2E3A32] shadow-garden bg-[#FAF3E3]">
-          {/* High-Resolution Exact Reference Artwork (857x467) */}
-          <img
-            src="/sprout-garden-path.jpg"
-            alt="You Are Here Garden Path"
-            className="w-full h-auto block select-none pointer-events-none"
-          />
-
-          {/* Precision Interactive SVG Overlay Layer */}
-          <svg
-            viewBox="0 0 857 467"
-            className="absolute inset-0 w-full h-full pointer-events-auto"
-            preserveAspectRatio="none"
-          >
-            {/* Interactive Milestone Stepping Stone Markers along the actual pink dotted path */}
-            {PATH_WAYPOINTS.map((wp, i) => {
-              const isPassed = i < currentLevelIndex;
-              const isCurrent = i === currentLevelIndex;
-              const isHovered = hoveredWaypoint === i;
-
-              return (
-                <g
-                  key={`wp-${i}`}
-                  className="cursor-pointer group"
-                  onClick={() => {
-                    setExpandedLevel(wp.level);
-                    const lvl = CURRICULUM_LEVELS[wp.level];
-                    const firstTopic = lvl?.topics.find((t) => t.algorithmId) || lvl?.topics[0];
-                    if (firstTopic) handleTopicClick(firstTopic, wp.level);
-                  }}
-                  onMouseEnter={() => setHoveredWaypoint(i)}
-                  onMouseLeave={() => setHoveredWaypoint(null)}
-                >
-                  {/* Outer Pulsing Glow on Current Milestone */}
-                  {isCurrent && (
-                    <circle
-                      cx={wp.x}
-                      cy={wp.y}
-                      r="16"
-                      fill="#F9A49E"
-                      opacity="0.45"
-                      className="animate-ping"
-                      style={{ animationDuration: '2.5s' }}
-                    />
-                  )}
-
-                  {/* Stepping Stone Disc */}
-                  <circle
-                    cx={wp.x}
-                    cy={wp.y}
-                    r={isCurrent ? 9 : isHovered ? 8 : 6.5}
-                    fill={isCurrent ? '#F9A49E' : isPassed ? '#FFAAA6' : '#FAF6E8'}
-                    stroke={isCurrent ? '#DC6C66' : isPassed ? '#E2867F' : '#D1C6AC'}
-                    strokeWidth={isCurrent ? '2.5' : '1.5'}
-                    className="transition-all duration-200 drop-shadow-sm"
-                  />
-
-                  {/* Inner Bloomed Flower Center for completed stones */}
-                  {isPassed && (
-                    <circle cx={wp.x} cy={wp.y} r="2" fill="#FFE39A" />
-                  )}
-
-                  {/* Milestone Hover Tooltip */}
-                  {isHovered && (
-                    <g className="animate-fadeIn pointer-events-none">
-                      <rect
-                        x={wp.x - 70}
-                        y={wp.y - 32}
-                        width="140"
-                        height="22"
-                        rx="11"
-                        fill="#FFFFFF"
-                        stroke="#74A250"
-                        strokeWidth="1.5"
-                        filter="drop-shadow(0 2px 4px rgba(0,0,0,0.15))"
-                      />
-                      <text
-                        x={wp.x}
-                        y={wp.y - 17}
-                        textAnchor="middle"
-                        fill="#2E3C27"
-                        fontSize="9.5"
-                        fontWeight="700"
-                        fontFamily="Inter, sans-serif"
-                      >
-                        {wp.name}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-
-            {/* FLOATING "YOU ARE HERE! 🌱" SPROUT BADGE DIRECTLY AT CURRENT POSITION */}
-            <g
-              transform={`translate(${currentPos.x}, ${currentPos.y})`}
-              className="pointer-events-none"
-            >
-              {/* Floating Speech Bubble with Pointer */}
-              <g transform="translate(0, -32)" className="animate-float">
-                <rect
-                  x="-46"
-                  y="-15"
-                  width="92"
-                  height="24"
-                  rx="12"
-                  fill="#FFFFFF"
-                  stroke="#74A250"
-                  strokeWidth="2"
-                  filter="drop-shadow(0 3px 6px rgba(0,0,0,0.18))"
-                />
-                <polygon points="-5,9 5,9 0,14" fill="#FFFFFF" stroke="#74A250" strokeWidth="1" />
-                <text
-                  x="0"
-                  y="2"
-                  textAnchor="middle"
-                  fontSize="10"
-                  fontWeight="800"
-                  fill="#2E3C27"
-                  fontFamily="Inter, sans-serif"
-                >
-                  You are here! 🌱
-                </text>
-              </g>
-
-              {/* Gentle Golden Sparkle around current avatar */}
-              <circle cx="12" cy="-8" r="1.5" fill="#FFE39A" className="animate-ping" />
-              <circle cx="-12" cy="-12" r="1.5" fill="#FFAAA6" className="animate-ping" style={{ animationDelay: '1s' }} />
-            </g>
-          </svg>
-        </div>
-
-        {/* Dynamic Sprout Trail Progress Caption */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-2 text-xs text-garden-secondary">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#74A250] dark:text-[#95CE64]">
-              🌱 Current Step:
-            </span>
-            <span className="font-semibold text-garden-text dark:text-garden-darktext">
-              Destination #{initialLevel} — {CURRICULUM_LEVELS[initialLevel]?.title}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 font-medium">
-            <span>
-              Step {currentLevelIndex + 1} of {PATH_WAYPOINTS.length} on the Garden Trail
-            </span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#EBF6D9] text-[#55822F] font-bold border border-[#CFE4A8]">
-              {Math.round(((currentLevelIndex + 1) / PATH_WAYPOINTS.length) * 100)}% Explored
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* 2. THE LIVING WATERCOLOR GARDEN PATH MAP */}
+      <LivingGardenPathMap
+        progress={progress}
+        onSelectLesson={onSelectLesson}
+        onExpandLevel={setExpandedLevel}
+        currentLevel={initialLevel}
+        levelDefaultLessons={LEVEL_DEFAULT_LESSON}
+      />
 
       {/* 3. THE EXPANDED CURRENT LEARNING AREA & DESTINATIONS */}
       <div className="space-y-4">

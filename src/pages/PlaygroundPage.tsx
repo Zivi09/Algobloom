@@ -18,6 +18,7 @@ import { GraphVisualizer } from '../visualizations/GraphVisualizer';
 import { TreeVisualizer } from '../visualizations/TreeVisualizer';
 import { DpTableVisualizer } from '../visualizations/DpTableVisualizer';
 import { TraceStep } from '../types';
+import { soundService } from '../services/soundService';
 import {
   generateBubbleSortTrace,
   generateSelectionSortTrace,
@@ -147,6 +148,48 @@ export const PlaygroundPage: React.FC = () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isPlaying, steps.length, speed]);
+
+  // Sonification hook for playground simulations
+  const prevStepIdxRef = useRef<number>(-1);
+  useEffect(() => {
+    if (steps.length === 0) return;
+    const prevIdx = prevStepIdxRef.current;
+    prevStepIdxRef.current = currentStepIdx;
+
+    if (prevIdx === -1 && currentStepIdx === 0) return;
+
+    if (currentStepIdx === 0 && prevIdx > 0) {
+      soundService.playBubblePop();
+      return;
+    }
+
+    if (currentStepIdx > prevIdx) {
+      const step = steps[currentStepIdx];
+      if (!step) return;
+
+      const arr = step.array || [];
+      const max = Math.max(...arr, 50);
+
+      const allSorted = Boolean(step.sortedIndices && arr.length > 0 && step.sortedIndices.length === arr.length);
+      if (step.isComplete || allSorted) {
+        soundService.playVictoryArpeggio();
+      } else if (step.swappedIndices && step.swappedIndices.length >= 2) {
+        const idxA = step.swappedIndices[0];
+        const idxB = step.swappedIndices[1];
+        soundService.playSwap(arr[idxA] ?? 0, arr[idxB] ?? 0, max);
+      } else if (step.comparingIndices && step.comparingIndices.length >= 2) {
+        const idxA = step.comparingIndices[0];
+        const idxB = step.comparingIndices[1];
+        soundService.playComparison(arr[idxA] ?? 0, arr[idxB] ?? 0, max);
+      } else if (step.sortedIndices && step.sortedIndices.length > 0) {
+        const latestIdx = step.sortedIndices[step.sortedIndices.length - 1];
+        soundService.playSortedChime(latestIdx, arr.length || 10);
+      } else if (step.highlightedIndices && step.highlightedIndices.length > 0) {
+        const freq = soundService.mapIndexToFrequency(step.highlightedIndices[0], arr.length || 10);
+        soundService.playTone(freq, { gain: 0.16, type: 'kalimba' });
+      }
+    }
+  }, [currentStepIdx, steps]);
 
   const currentStep = steps[currentStepIdx] || { step: 0, description: 'Initializing...' };
 
@@ -407,6 +450,7 @@ export const PlaygroundPage: React.FC = () => {
             onClick={() => {
               setIsPlaying(false);
               setCurrentStepIdx(0);
+              soundService.playBubblePop();
             }}
             className="p-2 rounded-xl bg-garden-bg border border-garden-cardborder text-garden-secondary hover:text-garden-text"
           >
@@ -429,7 +473,7 @@ export const PlaygroundPage: React.FC = () => {
 
       {/* Main Visualizer Stage */}
       {activeLab === 'sorting' || activeLab === 'search' ? (
-        <ArrayBarVisualizer currentStep={currentStep} />
+        <ArrayBarVisualizer currentStep={currentStep} speedMs={speed} />
       ) : activeLab === 'graph' ? (
         <GraphVisualizer currentStep={currentStep} />
       ) : activeLab === 'tree' ? (

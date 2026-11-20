@@ -111,3 +111,17 @@ body,
 .animate-fadeIn {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Safe SVG fade in that never overwrites transform="translate(x, y)" */
+@keyframes svgFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-svgFadeIn {
+  animation: svgFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

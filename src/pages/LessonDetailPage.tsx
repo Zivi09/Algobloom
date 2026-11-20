@@ -19,6 +19,8 @@ import {
   Award,
   RefreshCw,
   Baby,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AlgorithmLesson, TraceStep } from '../types';
@@ -26,6 +28,9 @@ import { ArrayBarVisualizer } from '../visualizations/ArrayBarVisualizer';
 import { GraphVisualizer } from '../visualizations/GraphVisualizer';
 import { TreeVisualizer } from '../visualizations/TreeVisualizer';
 import { DpTableVisualizer } from '../visualizations/DpTableVisualizer';
+import { soundService } from '../services/soundService';
+import { PredictStepChallenge } from '../components/visualization/PredictStepChallenge';
+import { getPredictionForStep, PredictionChallenge } from '../components/visualization/predictionEngine';
 import { generateLinearSearchTrace, generateBinarySearchTrace } from '../algorithms/traces/searchTraces';
 import {
   generateBubbleSortTrace,
@@ -77,6 +82,73 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1000); // ms per step
   const timerRef = useRef<any>(null);
+
+  // State: Acoustic Sonification
+  const [soundEnabled, setSoundEnabled] = useState(() => soundService.isSoundEnabled());
+  const prevStepIdxRef = useRef<number>(-1);
+
+  // State: "Predict the Next Step" Active Challenge Mode
+  const [predictMode, setPredictMode] = useState<boolean>(true);
+  const [predictionStats, setPredictionStats] = useState<{ correct: number; total: number; streak: number }>({
+    correct: 0,
+    total: 0,
+    streak: 0,
+  });
+  const [answeredChallenges, setAnsweredChallenges] = useState<Set<string>>(new Set());
+
+  const handleToggleSound = () => {
+    const next = soundService.toggleMute();
+    setSoundEnabled(next);
+  };
+
+  // Sonification hook: synchronizes botanical Web Audio acoustic feedback with trace steps
+  useEffect(() => {
+    if (traceSteps.length === 0) return;
+    const prevIdx = prevStepIdxRef.current;
+    prevStepIdxRef.current = currentStepIdx;
+
+    // Skip on initial mount
+    if (prevIdx === -1 && currentStepIdx === 0) return;
+
+    // Reset back to start
+    if (currentStepIdx === 0 && prevIdx > 0) {
+      soundService.playBubblePop();
+      return;
+    }
+
+    // Only sonify on forward progression
+    if (currentStepIdx > prevIdx) {
+      const step = traceSteps[currentStepIdx];
+      if (!step) return;
+
+      const arr = step.array || [];
+      const max = Math.max(...arr, 50);
+
+      // Check if algorithm complete
+      const allSorted = Boolean(step.sortedIndices && arr.length > 0 && step.sortedIndices.length === arr.length);
+      if (step.isComplete || allSorted) {
+        soundService.playVictoryArpeggio();
+      } else if (step.swappedIndices && step.swappedIndices.length >= 2) {
+        const idxA = step.swappedIndices[0];
+        const idxB = step.swappedIndices[1];
+        const valA = arr[idxA] ?? 0;
+        const valB = arr[idxB] ?? 0;
+        soundService.playSwap(valA, valB, max);
+      } else if (step.comparingIndices && step.comparingIndices.length >= 2) {
+        const idxA = step.comparingIndices[0];
+        const idxB = step.comparingIndices[1];
+        const valA = arr[idxA] ?? 0;
+        const valB = arr[idxB] ?? 0;
+        soundService.playComparison(valA, valB, max);
+      } else if (step.sortedIndices && step.sortedIndices.length > 0) {
+        const latestIdx = step.sortedIndices[step.sortedIndices.length - 1];
+        soundService.playSortedChime(latestIdx, arr.length || 10);
+      } else if (step.highlightedIndices && step.highlightedIndices.length > 0) {
+        const freq = soundService.mapIndexToFrequency(step.highlightedIndices[0], arr.length || 10);
+        soundService.playTone(freq, { gain: 0.16, type: 'kalimba' });
+      }
+    }
+  }, [currentStepIdx, traceSteps]);
 
   // State: Quiz
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
@@ -150,7 +222,54 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
     setTraceSteps(initialTrace);
     setCurrentStepIdx(0);
     setIsPlaying(false);
+    setAnsweredChallenges(new Set());
   }, [lesson.id]);
+
+  // Active prediction challenge calculation
+  const activeChallenge: PredictionChallenge | null =
+    predictMode && traceSteps.length > 0 && currentStepIdx < traceSteps.length
+      ? getPredictionForStep(
+          traceSteps[currentStepIdx],
+          traceSteps[currentStepIdx + 1],
+          lesson,
+          currentStepIdx,
+          traceSteps,
+          Number(customTargetInput.trim()) || 42
+        )
+      : null;
+
+  const isChallengeUnanswered = Boolean(activeChallenge && !answeredChallenges.has(activeChallenge.id));
+
+  // Automatically pause playback when arriving at an unanswered challenge
+  useEffect(() => {
+    if (predictMode && isChallengeUnanswered && isPlaying) {
+      setIsPlaying(false);
+    }
+  }, [predictMode, isChallengeUnanswered, isPlaying]);
+
+  const handleAnswerChallenge = (isCorrect: boolean) => {
+    setPredictionStats((prev) => ({
+      total: prev.total + 1,
+      correct: isCorrect ? prev.correct + 1 : prev.correct,
+      streak: isCorrect ? prev.streak + 1 : 0,
+    }));
+  };
+
+  const handleContinueStep = () => {
+    if (activeChallenge) {
+      setAnsweredChallenges((prev) => new Set([...prev, activeChallenge.id]));
+    }
+    setIsPlaying(false);
+    setCurrentStepIdx((prev) => Math.min(traceSteps.length - 1, prev + 1));
+  };
+
+  const handleSkipChallenge = () => {
+    if (activeChallenge) {
+      setAnsweredChallenges((prev) => new Set([...prev, activeChallenge.id]));
+    }
+    setIsPlaying(false);
+    setCurrentStepIdx((prev) => Math.min(traceSteps.length - 1, prev + 1));
+  };
 
   // Handle Playback Interval
   useEffect(() => {
@@ -178,6 +297,9 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
     if (currentStepIdx >= traceSteps.length - 1) {
       setCurrentStepIdx(0);
     }
+    if (!isPlaying && predictMode && isChallengeUnanswered) {
+      return;
+    }
     setIsPlaying(!isPlaying);
   };
 
@@ -194,6 +316,8 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
   const handleReset = () => {
     setIsPlaying(false);
     setCurrentStepIdx(0);
+    setAnsweredChallenges(new Set());
+    soundService.playBubblePop();
   };
 
   const handleApplyCustomInput = () => {
@@ -209,6 +333,7 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
         setTraceSteps(newTrace);
         setCurrentStepIdx(0);
         setIsPlaying(false);
+        setAnsweredChallenges(new Set());
       }
     } catch (e) {
       console.warn('Invalid custom input');
@@ -249,6 +374,7 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
 
     // If 5/5 Bloomed!
     if (score === 5) {
+      soundService.playVictoryArpeggio();
       confetti({
         particleCount: 80,
         spread: 70,
@@ -256,6 +382,7 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
         colors: ['#FFE0AF', '#F1B4B1', '#C6A8CE', '#939F7F'],
       });
     } else if (score < 3) {
+      soundService.playChirp();
       // Auto-prompt Relearn Mode
       setTimeout(() => setRelearnModalOpen(true), 1200);
     }
@@ -274,7 +401,7 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
     if (lesson.category === 'Dynamic Programming') {
       return <DpTableVisualizer currentStep={currentStep} />;
     }
-    return <ArrayBarVisualizer currentStep={currentStep} />;
+    return <ArrayBarVisualizer currentStep={currentStep} speedMs={playbackSpeed} />;
   };
 
   return (
@@ -526,6 +653,50 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
               <option value={1000}>1x Normal</option>
               <option value={400}>2x Fast</option>
             </select>
+
+            {/* Quick Sound Toggle Button */}
+            <button
+              onClick={handleToggleSound}
+              title={soundEnabled ? 'Mute Sonification' : 'Enable Kalimba Sonification'}
+              className={`p-2.5 rounded-xl border transition-all shadow-sm ${
+                soundEnabled
+                  ? 'bg-sagegreen/20 border-sagegreen text-sagegreen-800 dark:text-sagegreen-200'
+                  : 'bg-white dark:bg-garden-darkcard border-garden-cardborder dark:border-garden-darkcardborder text-garden-secondary hover:text-garden-text'
+              }`}
+            >
+              {soundEnabled ? (
+                <Volume2 size={16} className="text-sagegreen-600 dark:text-sagegreen-400" />
+              ) : (
+                <VolumeX size={16} />
+              )}
+            </button>
+
+            {/* "Predict the Next Step" Active Challenge Mode Toggle Pill */}
+            <button
+              onClick={() => setPredictMode(!predictMode)}
+              title={
+                predictMode
+                  ? '🔮 Predict Mode is ON: Pauses at critical algorithm steps to challenge your intuition'
+                  : '🔮 Predict Mode is OFF: Click to enable interactive step prediction challenge'
+              }
+              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm ${
+                predictMode
+                  ? 'bg-gradient-to-r from-softmauve/30 via-dustyrose/30 to-buttercream/30 border-softmauve text-purple-950 dark:text-purple-200 ring-2 ring-softmauve/30 shadow-garden-glow'
+                  : 'bg-white dark:bg-garden-darkcard border-garden-cardborder dark:border-garden-darkcardborder text-garden-secondary hover:text-garden-text hover:border-softmauve/50'
+              }`}
+            >
+              <span className="text-sm">🔮</span>
+              <span>Predict Mode</span>
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  predictMode
+                    ? 'bg-softmauve text-white'
+                    : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'
+                }`}
+              >
+                {predictMode ? 'ON' : 'OFF'}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -535,9 +706,16 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
             <span className="px-3 py-1 rounded-full bg-dustyrose/30 text-garden-text font-mono text-xs font-bold">
               Step {currentStepIdx + 1} / {traceSteps.length}
             </span>
-            <p className="text-xs sm:text-sm font-medium text-garden-text dark:text-garden-darktext">
-              {currentStep.description}
-            </p>
+            {predictMode && isChallengeUnanswered ? (
+              <p className="text-xs sm:text-sm font-medium text-garden-text dark:text-garden-darktext">
+                <span className="font-bold text-softmauve mr-1.5">🔮 Decision Point:</span>
+                <span>Pause at this critical decision point and predict the outcome below!</span>
+              </p>
+            ) : (
+              <p className="text-xs sm:text-sm font-medium text-garden-text dark:text-garden-darktext">
+                {currentStep.description}
+              </p>
+            )}
           </div>
           {currentStep.isComplete && (
             <span className="px-3 py-1 rounded-full bg-sagegreen/30 text-sagegreen-600 font-bold text-xs shrink-0 flex items-center gap-1">
@@ -545,6 +723,32 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
             </span>
           )}
         </div>
+
+        {/* Active Prediction Challenge Card */}
+        {predictMode && activeChallenge && isChallengeUnanswered && (
+          <PredictStepChallenge
+            challenge={activeChallenge}
+            stats={predictionStats}
+            onAnswer={handleAnswerChallenge}
+            onContinue={handleContinueStep}
+            onSkip={handleSkipChallenge}
+          />
+        )}
+
+        {/* Prediction Completed Banner when revisiting step */}
+        {predictMode && activeChallenge && !isChallengeUnanswered && (
+          <div className="p-3 px-4 rounded-2xl bg-sagegreen/10 border border-sagegreen/30 text-xs font-medium text-sagegreen-800 dark:text-sagegreen-200 flex items-center justify-between shadow-sm">
+            <span className="flex items-center gap-1.5">
+              <span>🎯 Step Prediction Solved:</span>
+              <span className="text-garden-secondary dark:text-garden-darksecondary italic truncate max-w-md">
+                {activeChallenge.question}
+              </span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-sagegreen/20 text-emerald-900 dark:text-emerald-200 text-[11px] font-bold shrink-0">
+              ✓ Correct Intuition (+15 XP)
+            </span>
+          </div>
+        )}
 
         {/* Visualizer Renderer Container */}
         {renderVisualizerArea()}

@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server/dist/index.js",
+    "server:dev": "npm --prefix server run dev",
+    "server:build": "npm --prefix server run build"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
@@ -23,6 +26,7 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
+    "tsx": "^4.19.2",
     "vite": "^6.0.7"
   }
 }

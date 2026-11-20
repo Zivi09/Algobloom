@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { MessageSquare, Sparkles, X, Send, HelpCircle, Heart } from 'lucide-react';
-import { getAlgoBuddyResponse, TutorResponse } from '../services/algoBuddyTutor';
+import React, { useState, useRef, useEffect } from 'react';
+import { Sparkles, X, Send } from 'lucide-react';
+import { queryAlgoBuddy, TutorResponse } from '../services/algoBuddyTutor';
 
 interface AlgoBuddyProps {
   currentLessonId?: string;
@@ -17,6 +17,16 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputQuestion, setInputQuestion] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [activeFollowUps, setActiveFollowUps] = useState<string[]>([
+    'Big O complexity?',
+    'Give me an analogy',
+    'Why does this work?',
+    'Show me the code',
+    'Common mistakes',
+  ]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const [chatHistory, setChatHistory] = useState<
     { sender: 'user' | 'buddy'; text: string; code?: string; expression?: string }[]
   >([
@@ -31,6 +41,26 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
     },
   ]);
 
+  // Update greeting and suggestions when currentLessonTitle changes
+  useEffect(() => {
+    if (currentLessonTitle) {
+      setActiveFollowUps([
+        `Big O of ${currentLessonTitle}?`,
+        `Give me an analogy`,
+        `How does it work?`,
+        `Show me Python code`,
+        `Common mistakes`,
+      ]);
+    }
+  }, [currentLessonTitle]);
+
+  // Scroll to bottom whenever messages update
+  useEffect(() => {
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatHistory, isTyping, isOpen]);
+
   const handleSend = (textToSend?: string) => {
     const q = textToSend || inputQuestion;
     if (!q.trim()) return;
@@ -39,10 +69,11 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
     const updatedHistory = [...chatHistory, { sender: 'user' as const, text: q }];
     setChatHistory(updatedHistory);
     setInputQuestion('');
+    setIsTyping(true);
 
-    // Get buddy answer
-    const resp: TutorResponse = getAlgoBuddyResponse(q, currentLessonId, currentLessonTitle);
-    setTimeout(() => {
+    // Get buddy answer from smart local curriculum engine (with optional LLM enhancement)
+    queryAlgoBuddy(q, currentLessonId, currentLessonTitle).then((resp: TutorResponse) => {
+      setIsTyping(false);
       setChatHistory((prev) => [
         ...prev,
         {
@@ -52,7 +83,10 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
           expression: resp.expression,
         },
       ]);
-    }, 400);
+      if (resp.suggestedFollowUps && resp.suggestedFollowUps.length > 0) {
+        setActiveFollowUps(resp.suggestedFollowUps);
+      }
+    });
   };
 
   // Botanical Face Avatar with expressive features
@@ -100,7 +134,7 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
     }
 
     return (
-      <svg width={size} height={size} viewBox="0 0 48 48" className="select-none filter drop-shadow-sm">
+      <svg width={size} height={size} viewBox="0 0 48 48" className="select-none filter drop-shadow-sm flex-shrink-0">
         {/* Flower Petals */}
         <g fill="#F1B4B1">
           <circle cx="24" cy="7" r="7" />
@@ -176,13 +210,14 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-1.5 rounded-full text-garden-secondary hover:text-garden-text hover:bg-garden-bg transition-colors"
+                title="Close AlgoBuddy"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Chat Messages Body */}
-            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 text-xs sm:text-sm">
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 text-xs sm:text-sm scrollbar-thin">
               {chatHistory.map((msg, idx) => (
                 <div
                   key={idx}
@@ -192,31 +227,38 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
                     <div className="shrink-0 mt-0.5">{renderBuddyFace(msg.expression || 'happy', 26)}</div>
                   )}
                   <div
-                    className={`p-3 rounded-2xl max-w-[82%] leading-relaxed ${
+                    className={`p-3.5 rounded-2xl max-w-[85%] leading-relaxed whitespace-pre-line ${
                       msg.sender === 'user'
-                        ? 'bg-dustyrose text-garden-text rounded-tr-none'
-                        : 'bg-garden-bg dark:bg-garden-darkbg border border-garden-cardborder dark:border-garden-darkcardborder text-garden-text dark:text-garden-darktext rounded-tl-none'
+                        ? 'bg-dustyrose text-garden-text rounded-tr-none font-medium'
+                        : 'bg-garden-bg/60 dark:bg-garden-darkbg/70 border border-garden-cardborder/60 dark:border-garden-darkcardborder/60 text-garden-text dark:text-garden-darktext rounded-tl-none'
                     }`}
                   >
                     <p>{msg.text}</p>
                     {msg.code && (
-                      <pre className="mt-2 p-2 rounded-lg bg-black/10 dark:bg-black/30 font-mono text-[11px] overflow-x-auto text-garden-text dark:text-garden-darktext">
+                      <pre className="mt-2.5 p-2.5 rounded-xl bg-black/10 dark:bg-black/40 font-mono text-[11px] overflow-x-auto text-garden-text dark:text-garden-darktext border border-black/5">
                         <code>{msg.code}</code>
                       </pre>
                     )}
                   </div>
                 </div>
               ))}
+
+              {/* Typing indicator */}
+              {isTyping && (
+                <div className="flex gap-2 justify-start items-center">
+                  <div className="shrink-0">{renderBuddyFace('thinking', 26)}</div>
+                  <div className="p-3 rounded-2xl bg-garden-bg/40 dark:bg-garden-darkbg/50 border border-garden-cardborder/40 text-[11px] text-garden-secondary dark:text-garden-darksecondary italic flex items-center gap-1.5">
+                    <span>AlgoBuddy is thinking...</span>
+                    <span className="animate-pulse">🌸</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Quick Suggestions Chips */}
-            <div className="px-4 py-2 border-t border-garden-cardborder/60 dark:border-garden-darkcardborder/60 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-[11px]">
-              {[
-                'Big O complexity?',
-                'Give me an analogy',
-                'Why does this work?',
-                'Common mistakes',
-              ].map((chip, idx) => (
+            <div className="px-3 py-2 border-t border-garden-cardborder/60 dark:border-garden-darkcardborder/60 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-[11px]">
+              {activeFollowUps.map((chip, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(chip)}
@@ -231,7 +273,7 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
             <div className="p-3 border-t border-garden-cardborder dark:border-garden-darkcardborder bg-white dark:bg-garden-darkcard flex items-center gap-2">
               <input
                 type="text"
-                placeholder="Ask AlgoBuddy a question..."
+                placeholder="Ask AlgoBuddy anything..."
                 value={inputQuestion}
                 onChange={(e) => setInputQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -241,6 +283,7 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
                 onClick={() => handleSend()}
                 disabled={!inputQuestion.trim()}
                 className="p-2.5 rounded-xl bg-dustyrose text-garden-text hover:bg-dustyrose-400 disabled:opacity-40 transition-colors"
+                title="Send question"
               >
                 <Send size={15} />
               </button>

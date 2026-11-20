@@ -15,13 +15,22 @@ import { AchievementsPage } from './pages/AchievementsPage';
 import { BookmarksPage } from './pages/BookmarksPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LessonDetailPage } from './pages/LessonDetailPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { GuildsPage } from './pages/GuildsPage';
+import { AlgoRacePage } from './pages/AlgoRacePage';
+import { AuthModal } from './components/auth/AuthModal';
+import { PublicGardenModal } from './components/social/PublicGardenModal';
 import { ProgressService } from './services/progressService';
-import { UserProgress, AlgorithmLesson } from './types';
+import { storageAdapter } from './services/storageAdapter';
+import { UserProgress, AlgorithmLesson, UserProfile } from './types';
 import { getLessonById } from './curriculum/lessons';
 
 export const App: React.FC = () => {
   const progressService = ProgressService.getInstance();
   const [progress, setProgress] = useState<UserProgress>(progressService.getProgress());
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() =>
+    storageAdapter.getCurrentUser()
+  );
   const [currentPage, setCurrentPage] = useState<NavPage>('home');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isCompact, setIsCompact] = useState<boolean>(() => {
@@ -33,6 +42,18 @@ export const App: React.FC = () => {
     }
   });
   const [activeLessonId, setActiveLessonId] = useState<string>('binary-search');
+
+  // Modals state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [publicGardenModalOpen, setPublicGardenModalOpen] = useState(false);
+  const [selectedGardenUsername, setSelectedGardenUsername] = useState<string>('blossom_coder');
+
+  // Listen to auth state changes from storageAdapter
+  useEffect(() => {
+    return storageAdapter.onAuthChange((user) => {
+      setCurrentUser(user);
+    });
+  }, []);
 
   // Persist sidebar compact preference
   useEffect(() => {
@@ -88,6 +109,11 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleOpenGarden = (username: string) => {
+    setSelectedGardenUsername(username);
+    setPublicGardenModalOpen(true);
+  };
+
   const activeLesson: AlgorithmLesson | undefined = getLessonById(activeLessonId);
 
   // Render Page Content
@@ -133,6 +159,29 @@ export const App: React.FC = () => {
           <DailyChallengePage
             progress={progress}
             onChallengeSolved={() => setProgress(progressService.getProgress())}
+          />
+        );
+      case 'leaderboard':
+        return (
+          <LeaderboardPage
+            currentUserUsername={currentUser?.username}
+            onVisitGarden={handleOpenGarden}
+          />
+        );
+      case 'guilds':
+        return (
+          <GuildsPage
+            currentUserUsername={currentUser?.username}
+            onVisitGarden={handleOpenGarden}
+          />
+        );
+      case 'algo-race':
+        return (
+          <AlgoRacePage
+            onEarnXp={(amount) => {
+              const updated = progressService.addXp(amount);
+              setProgress(updated);
+            }}
           />
         );
       case 'revision':
@@ -221,6 +270,14 @@ export const App: React.FC = () => {
           darkMode={progress.settings.darkMode}
           onToggleDarkMode={handleToggleDarkMode}
           onSelectLesson={handleSelectLesson}
+          currentUser={currentUser}
+          onOpenAuthModal={() => setAuthModalOpen(true)}
+          onOpenMyGarden={(uname) => handleOpenGarden(uname)}
+          onLogout={async () => {
+            await storageAdapter.logout();
+            setProgress(progressService.getProgress());
+          }}
+          onNavigatePage={(p) => setCurrentPage(p as NavPage)}
         />
 
         {/* Dynamic Route View */}
@@ -237,6 +294,24 @@ export const App: React.FC = () => {
           mood="happy"
         />
       )}
+
+      {/* Cloud Auth & Guest Migration Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        guestProgress={progress}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+          setProgress(progressService.getProgress());
+        }}
+      />
+
+      {/* Public Garden Modal */}
+      <PublicGardenModal
+        isOpen={publicGardenModalOpen}
+        onClose={() => setPublicGardenModalOpen(false)}
+        username={selectedGardenUsername}
+      />
     </div>
   );
 };
