@@ -1,4 +1,5 @@
 import { UserProgress, Achievement } from '../types';
+import { storageAdapter } from './storageAdapter';
 
 const PROGRESS_KEY = 'algobloom_user_progress_v1';
 
@@ -141,9 +142,8 @@ export class ProgressService {
 
   private loadFromStorage(): UserProgress {
     try {
-      const raw = localStorage.getItem(PROGRESS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
+      const parsed = storageAdapter.loadLocalProgress();
+      if (parsed) {
         return {
           ...INITIAL_PROGRESS,
           ...parsed,
@@ -157,11 +157,22 @@ export class ProgressService {
   }
 
   private saveToStorage(): void {
-    try {
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(this.currentProgress));
-    } catch (e) {
-      console.error('Failed to save progress to localStorage', e);
-    }
+    storageAdapter.syncProgress(this.currentProgress);
+  }
+
+  public setProgress(progress: UserProgress): UserProgress {
+    this.currentProgress = {
+      ...INITIAL_PROGRESS,
+      ...progress,
+      settings: { ...INITIAL_PROGRESS.settings, ...(progress.settings || {}) },
+    };
+    this.saveToStorage();
+    return this.getProgress();
+  }
+
+  public reloadFromStorage(): UserProgress {
+    this.currentProgress = this.loadFromStorage();
+    return this.getProgress();
   }
 
   private updateStreak(): void {

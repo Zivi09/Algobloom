@@ -51,9 +51,10 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-garden-bg/90 dark:bg-garden-darkbg/90 backdrop-blur-md border-b border-garden-cardborder dark:border-garden-darkcardborder flex items-center justify-between px-4 sm:px-8">
-      {/* Left: Mobile hamburger & Title */}
+    <header className="sticky top-0 z-30 h-16 bg-garden-bg/90 dark:bg-garden-darkbg/90 backdrop-blur-md border-b border-garden-cardborder dark:border-garden-darkcardborder flex items-center justify-between px-4 sm:px-8 transition-colors duration-300">
+      {/* Left: Mobile hamburger & Search */}
       <div className="flex items-center gap-3">
+        {/* Mobile menu button */}
         <button
           onClick={onOpenMobileSidebar}
           aria-label="Open navigation menu"

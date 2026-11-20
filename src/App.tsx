@@ -24,7 +24,49 @@ export const App: React.FC = () => {
   const [progress, setProgress] = useState<UserProgress>(progressService.getProgress());
   const [currentPage, setCurrentPage] = useState<NavPage>('home');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isCompact, setIsCompact] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('algobloom_sidebar_compact');
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [activeLessonId, setActiveLessonId] = useState<string>('binary-search');
+
+  // Persist sidebar compact preference
+  useEffect(() => {
+    try {
+      localStorage.setItem('algobloom_sidebar_compact', String(isCompact));
+    } catch {
+      // ignore
+    }
+  }, [isCompact]);
+
+  // Keyboard shortcut listener (Ctrl+B, Cmd+B, or '[' to toggle panel)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput =
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName) ||
+        target?.isContentEditable;
+      if (isInput) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setIsCompact((prev) => !prev);
+      } else if (e.key === '[' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setIsCompact((prev) => !prev);
+      } else if (e.key === 'Escape' && mobileSidebarOpen) {
+        e.preventDefault();
+        setMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileSidebarOpen]);
 
   // Handle Dark mode class on root element
   useEffect(() => {
@@ -159,12 +201,18 @@ export const App: React.FC = () => {
         }}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        isCompact={isCompact}
+        onToggleCompact={() => setIsCompact((prev) => !prev)}
         streak={progress.streak}
         xp={progress.xp}
       />
 
       {/* Main Content Area */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div
+        className={`flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
+          isCompact ? 'lg:pl-20' : 'lg:pl-64'
+        }`}
+      >
         {/* Top Header */}
         <Header
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}

@@ -251,3 +251,123 @@ export interface Achievement {
   xpReward: number;
   condition: (progress: UserProgress) => boolean;
 }
+
+// Multi-User & Social Types (AlgoBloom 2.0)
+export type LeagueTier = 'SEEDLING' | 'SPROUT' | 'BUDDING' | 'BLOSSOM' | 'ANCIENT_GROVE';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  displayName: string;
+  bio?: string;
+  avatarFlower: string;
+  totalXp: number;
+  currentStreak: number;
+  leagueTier: LeagueTier;
+  isGardenPublic: boolean;
+  role?: 'USER' | 'EDUCATOR' | 'ADMIN';
+  createdAt?: string;
+  settings?: UserProgress['settings'];
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarFlower: string;
+  totalXp: number;
+  streak: number;
+  leagueTier: LeagueTier;
+  bloomedCount: number;
+  isCurrentUser?: boolean;
+}
+
+export type GuildRole = 'OWNER' | 'OFFICER' | 'MEMBER';
+
+export interface GuildMember {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarFlower: string;
+  role: GuildRole;
+  xpContributed: number;
+  joinedAt: string;
+}
+
+export interface Guild {
+  id: string;
+  name: string;
+  motto: string;
+  bannerColor: string;
+  totalXp: number;
+  level: number;
+  memberCount: number;
+  ownerId: string;
+  sacredTreeStage: 'seed' | 'sapling' | 'great-oak' | 'sacred-lotus';
+  communalProgress: number; // 0 to 100 towards next level
+  members?: GuildMember[];
+}
+
+export interface GuildActivity {
+  id: string;
+  guildId: string;
+  username: string;
+  displayName: string;
+  message: string;
+  timestamp: string;
+  xpGained?: number;
+  type: 'mastery' | 'bloom' | 'quiz' | 'join';
+}
+
+export type GardenReactionType = 'blossom' | 'bee' | 'water';
+
+export interface PublicGardenFlower {
+  algorithmId: string;
+  plantName: string;
+  flowerType: string;
+  stage: 'seed' | 'sprout' | 'bud' | 'bloomed';
+  bloomedAt?: string;
+  plantedAt?: string;
+  bestScore?: number;
+}
+
+export interface PublicGardenProfile {
+  username: string;
+  displayName: string;
+  avatarFlower: string;
+  bio: string;
+  totalXp: number;
+  streak: number;
+  leagueTier: LeagueTier;
+  reactions: {
+    blossom: number;
+    bee: number;
+    water: number;
+  };
+  flowers: PublicGardenFlower[];
+  badges: string[];
+}
+
+export interface RaceQuestion {
+  id: string;
+  question: string;
+  options: [string, string, string, string];
+  correctIndex: number;
+  algorithmName: string;
+  timeLimit: number;
+  explanation: string;
+}
+
+export interface RacePlayer {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarFlower: string;
+  progress: number; // 0 to 100
+  score: number;
+  isFinished: boolean;
+  currentQuestionIndex: number;
+}
+
