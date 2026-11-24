@@ -50,7 +50,7 @@ export const FlipArrayBar: React.FC<FlipArrayBarProps> = ({
       <div
         ref={onBarRef}
         data-bar-index={index}
-        className={`w-full flex flex-col items-center justify-end relative will-change-transform ${
+        className={`w-full h-[calc(100%-24px)] flex flex-col items-center justify-end relative will-change-transform ${
           isSwapping ? (swapRole === 'higher' ? 'z-40' : 'z-30') : 'z-10'
         }`}
         style={{
@@ -60,11 +60,11 @@ export const FlipArrayBar: React.FC<FlipArrayBarProps> = ({
         {/* Swap motion trail / glow ring cue */}
         {isSwapping && (
           <div
-            className={`absolute inset-x-0 bottom-0 pointer-events-none rounded-t-xl animate-pulse transition-opacity duration-300 ${
+            className={`absolute inset-x-0 bottom-0 pointer-events-none rounded-t-xl transition-opacity duration-300 ${
               swapRole === 'higher' ? 'opacity-70' : 'opacity-40'
             }`}
             style={{
-              height: `${heightPercent}%`,
+              height: `${Math.max(18, heightPercent)}%`,
               boxShadow: '0 0 20px 4px rgba(241, 180, 177, 0.65)',
             }}
           />
@@ -72,26 +72,23 @@ export const FlipArrayBar: React.FC<FlipArrayBarProps> = ({
 
         {/* The Bar Pillar */}
         <div
-          style={{ height: `${heightPercent}%` }}
-          className={`w-full rounded-t-xl transition-colors duration-200 border flex flex-col justify-between items-center py-2 relative overflow-hidden ${colorClass} ${
-            isSwapping ? 'shadow-garden-glow border-dustyrose-400 ring-2 ring-dustyrose/50' : ''
+          style={{ height: `${Math.max(18, heightPercent)}%` }}
+          className={`w-full min-h-[38px] rounded-t-xl transition-colors duration-200 border-2 flex flex-col items-center justify-start pt-2 px-1 relative overflow-hidden ${colorClass} ${
+            isSwapping ? 'shadow-garden-glow border-dustyrose-400 ring-2 ring-dustyrose/50 scale-[1.02]' : ''
           }`}
         >
           {/* Subtle botanical highlight sheen */}
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-white/30 rounded-t-xl pointer-events-none" />
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-white/40 rounded-t-xl pointer-events-none" />
 
           {/* Bar value badge */}
-          <span className="font-semibold text-xs sm:text-sm tracking-tight z-10 drop-shadow-sm">
+          <span className="font-bold text-xs sm:text-sm tracking-tight z-10 drop-shadow-sm select-none leading-none">
             {value}
           </span>
-
-          {/* Subtle vertical wood/stem grain texture */}
-          <div className="w-0.5 h-1/3 bg-white/20 rounded-full my-auto pointer-events-none" />
         </div>
 
         {/* Physical ground contact shadow underneath the bar */}
         <div
-          className={`w-4/5 h-1.5 rounded-full mt-0.5 transition-all duration-300 ${
+          className={`w-4/5 h-1.5 rounded-full mt-1 transition-all duration-300 ${
             isSwapping
               ? 'bg-dustyrose-400/40 blur-[1px] scale-90'
               : 'bg-garden-text/15 dark:bg-black/30'

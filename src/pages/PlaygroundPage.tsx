@@ -12,11 +12,13 @@ import {
   Sparkles,
   GitBranch,
   Boxes,
+  HelpCircle,
 } from 'lucide-react';
 import { ArrayBarVisualizer } from '../visualizations/ArrayBarVisualizer';
 import { GraphVisualizer } from '../visualizations/GraphVisualizer';
 import { TreeVisualizer } from '../visualizations/TreeVisualizer';
 import { DpTableVisualizer } from '../visualizations/DpTableVisualizer';
+import { PlaygroundTourModal } from '../components/playground/PlaygroundTourModal';
 import { TraceStep } from '../types';
 import { soundService } from '../services/soundService';
 import {
@@ -33,6 +35,7 @@ import { generateFibonacciDpTrace, generateCoinChangeTrace } from '../algorithms
 
 export const PlaygroundPage: React.FC = () => {
   const [activeLab, setActiveLab] = useState<'sorting' | 'graph' | 'tree' | 'search' | 'dp'>('sorting');
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   // Common Playback States
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
@@ -195,22 +198,45 @@ export const PlaygroundPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto pb-20 flex flex-col gap-8">
-      {/* Page Title */}
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-buttercream/50 border border-buttercream text-xs font-semibold text-amber-950">
-          <span>🧪</span>
-          <span>Interactive Experimentation Sandbox</span>
+      {/* Page Title & Guided Demo Tour Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-buttercream/50 border border-buttercream text-xs font-semibold text-amber-950">
+            <span>🧪</span>
+            <span>Interactive Experimentation Sandbox</span>
+          </div>
+          <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-garden-text dark:text-garden-darktext tracking-tight">
+            Algorithm Playground
+          </h1>
+          <p className="text-sm sm:text-base text-garden-secondary max-w-xl">
+            Build inputs, modify parameters, change presets, and watch the execution mechanics step-by-step.
+          </p>
         </div>
-        <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-garden-text dark:text-garden-darktext tracking-tight">
-          Algorithm Playground
-        </h1>
-        <p className="text-sm sm:text-base text-garden-secondary max-w-xl">
-          Build inputs, modify parameters, change presets, and watch the execution mechanics step-by-step.
-        </p>
+
+        {/* Guided Tour & Demo Button (App-Style Walkthrough) */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              soundService.playChirp();
+              setIsTourOpen(true);
+            }}
+            className="px-4 py-2.5 rounded-2xl bg-dustyrose hover:bg-dustyrose-400 text-garden-text font-bold text-xs sm:text-sm shadow-sm hover:shadow transition-all flex items-center gap-2 group animate-pulse hover:animate-none"
+            title="Interactive Demo & Feature Walkthrough"
+          >
+            <Sparkles size={16} className="text-amber-900 group-hover:rotate-12 transition-transform" />
+            <span>Interactive Demo & Tour</span>
+            <span className="px-2 py-0.5 rounded-full bg-white/80 dark:bg-black/30 text-[10px] font-black tracking-wider uppercase text-amber-950 dark:text-amber-200">
+              How to Use
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Lab Switcher Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-garden-cardborder dark:border-garden-darkcardborder pb-4">
+      <div
+        id="tour-lab-tabs"
+        className="flex flex-wrap gap-2 border-b border-garden-cardborder dark:border-garden-darkcardborder pb-4"
+      >
         {[
           { id: 'sorting', label: 'Sorting Sandbox', icon: '📊' },
           { id: 'graph', label: 'Graph Lab', icon: '🕸️' },
@@ -240,7 +266,7 @@ export const PlaygroundPage: React.FC = () => {
         {/* SORTING CONTROLS */}
         {activeLab === 'sorting' && (
           <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
-            <div className="flex items-center gap-1.5">
+            <div id="tour-algo-select" className="flex items-center gap-1.5">
               <span className="font-semibold text-garden-secondary">Algorithm:</span>
               <select
                 value={selectedSortAlgo}
@@ -253,41 +279,53 @@ export const PlaygroundPage: React.FC = () => {
                 <option value="merge">Merge Sort</option>
                 <option value="quick">Quick Sort</option>
               </select>
+              <button
+                onClick={() => {
+                  soundService.playChirp();
+                  setIsTourOpen(true);
+                }}
+                title="Explain this algorithm"
+                className="p-1 rounded-lg text-garden-secondary hover:text-garden-text hover:bg-garden-hover"
+              >
+                <HelpCircle size={15} />
+              </button>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-garden-secondary">Preset:</span>
-              {(['random', 'nearly', 'reverse'] as const).map((pr) => (
-                <button
-                  key={pr}
-                  onClick={() => {
-                    setArrayPreset(pr);
-                    generateNewArray(pr);
-                  }}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold capitalize border ${
-                    arrayPreset === pr
-                      ? 'bg-buttercream border-amber-300 text-amber-950 font-bold'
-                      : 'border-garden-cardborder text-garden-secondary hover:text-garden-text'
-                  }`}
-                >
-                  {pr}
-                </button>
-              ))}
-            </div>
+            <div id="tour-input-controls" className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-garden-secondary">Preset:</span>
+                {(['random', 'nearly', 'reverse'] as const).map((pr) => (
+                  <button
+                    key={pr}
+                    onClick={() => {
+                      setArrayPreset(pr);
+                      generateNewArray(pr);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold capitalize border ${
+                      arrayPreset === pr
+                        ? 'bg-buttercream border-amber-300 text-amber-950 font-bold'
+                        : 'border-garden-cardborder text-garden-secondary hover:text-garden-text'
+                    }`}
+                  >
+                    {pr}
+                  </button>
+                ))}
+              </div>
 
-            <button
-              onClick={() => generateNewArray(arrayPreset)}
-              className="p-2 rounded-xl bg-garden-bg border border-garden-cardborder text-garden-text hover:bg-garden-hover flex items-center gap-1 text-xs font-semibold"
-            >
-              <RefreshCw size={13} /> New Data
-            </button>
+              <button
+                onClick={() => generateNewArray(arrayPreset)}
+                className="p-2 rounded-xl bg-garden-bg border border-garden-cardborder text-garden-text hover:bg-garden-hover flex items-center gap-1 text-xs font-semibold"
+              >
+                <RefreshCw size={13} /> New Data
+              </button>
+            </div>
           </div>
         )}
 
         {/* SEARCH CONTROLS */}
         {activeLab === 'search' && (
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
+            <div id="tour-algo-select" className="flex items-center gap-2">
               <span className="font-semibold text-garden-secondary">Method:</span>
               <select
                 value={selectedSearchAlgo}
@@ -297,9 +335,19 @@ export const PlaygroundPage: React.FC = () => {
                 <option value="binary">Binary Search (O(log n))</option>
                 <option value="linear">Linear Search (O(n))</option>
               </select>
+              <button
+                onClick={() => {
+                  soundService.playChirp();
+                  setIsTourOpen(true);
+                }}
+                title="Explain this search method"
+                className="p-1 rounded-lg text-garden-secondary hover:text-garden-text hover:bg-garden-hover"
+              >
+                <HelpCircle size={15} />
+              </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div id="tour-input-controls" className="flex items-center gap-2">
               <span className="font-semibold text-garden-secondary">Target Value:</span>
               <input
                 type="number"
@@ -314,7 +362,7 @@ export const PlaygroundPage: React.FC = () => {
         {/* GRAPH CONTROLS */}
         {activeLab === 'graph' && (
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
+            <div id="tour-algo-select" className="flex items-center gap-2">
               <span className="font-semibold text-garden-secondary">Algorithm:</span>
               <select
                 value={selectedGraphAlgo}
@@ -325,9 +373,19 @@ export const PlaygroundPage: React.FC = () => {
                 <option value="dfs">Depth-First Search (DFS)</option>
                 <option value="dijkstra">Dijkstra's Shortest Path</option>
               </select>
+              <button
+                onClick={() => {
+                  soundService.playChirp();
+                  setIsTourOpen(true);
+                }}
+                title="Explain this graph algorithm"
+                className="p-1 rounded-lg text-garden-secondary hover:text-garden-text hover:bg-garden-hover"
+              >
+                <HelpCircle size={15} />
+              </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div id="tour-input-controls" className="flex items-center gap-2">
               <span className="font-semibold text-garden-secondary">Start Vertex:</span>
               {(['A', 'B', 'C', 'D'] as const).map((v) => (
                 <button
@@ -349,7 +407,7 @@ export const PlaygroundPage: React.FC = () => {
         {/* TREE CONTROLS */}
         {activeLab === 'tree' && (
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
+            <div id="tour-algo-select" className="flex items-center gap-2">
               <span className="font-semibold text-garden-secondary">Operation:</span>
               <select
                 value={treeAction}
@@ -361,26 +419,38 @@ export const PlaygroundPage: React.FC = () => {
                 <option value="preorder">Preorder Traversal</option>
                 <option value="postorder">Postorder Traversal</option>
               </select>
+              <button
+                onClick={() => {
+                  soundService.playChirp();
+                  setIsTourOpen(true);
+                }}
+                title="Explain this tree operation"
+                className="p-1 rounded-lg text-garden-secondary hover:text-garden-text hover:bg-garden-hover"
+              >
+                <HelpCircle size={15} />
+              </button>
             </div>
 
-            {treeAction === 'search' && (
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-garden-secondary">Target:</span>
-                <input
-                  type="number"
-                  value={treeSearchVal}
-                  onChange={(e) => setTreeSearchVal(Number(e.target.value))}
-                  className="w-20 px-3 py-1.5 rounded-xl border border-garden-cardborder bg-garden-bg text-garden-text font-mono focus:outline-none"
-                />
-              </div>
-            )}
+            <div id="tour-input-controls">
+              {treeAction === 'search' && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-garden-secondary">Target:</span>
+                  <input
+                    type="number"
+                    value={treeSearchVal}
+                    onChange={(e) => setTreeSearchVal(Number(e.target.value))}
+                    className="w-20 px-3 py-1.5 rounded-xl border border-garden-cardborder bg-garden-bg text-garden-text font-mono focus:outline-none"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* DP CONTROLS */}
         {activeLab === 'dp' && (
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
+            <div id="tour-algo-select" className="flex items-center gap-2">
               <span className="font-semibold text-garden-secondary">Problem:</span>
               <select
                 value={selectedDpProblem}
@@ -390,38 +460,50 @@ export const PlaygroundPage: React.FC = () => {
                 <option value="fibonacci">Fibonacci Number</option>
                 <option value="coin-change">Coin Change Minimum Coins</option>
               </select>
+              <button
+                onClick={() => {
+                  soundService.playChirp();
+                  setIsTourOpen(true);
+                }}
+                title="Explain this DP problem"
+                className="p-1 rounded-lg text-garden-secondary hover:text-garden-text hover:bg-garden-hover"
+              >
+                <HelpCircle size={15} />
+              </button>
             </div>
 
-            {selectedDpProblem === 'fibonacci' ? (
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-garden-secondary">N (up to 12):</span>
-                <input
-                  type="number"
-                  min={2}
-                  max={12}
-                  value={fibN}
-                  onChange={(e) => setFibN(Math.min(12, Math.max(2, Number(e.target.value))))}
-                  className="w-16 px-2 py-1.5 rounded-xl border border-garden-cardborder bg-garden-bg text-garden-text font-mono focus:outline-none"
-                />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-garden-secondary">Target Amount ($):</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={coinAmount}
-                  onChange={(e) => setCoinAmount(Math.min(12, Math.max(1, Number(e.target.value))))}
-                  className="w-16 px-2 py-1.5 rounded-xl border border-garden-cardborder bg-garden-bg text-garden-text font-mono focus:outline-none"
-                />
-              </div>
-            )}
+            <div id="tour-input-controls">
+              {selectedDpProblem === 'fibonacci' ? (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-garden-secondary">N (up to 12):</span>
+                  <input
+                    type="number"
+                    min={2}
+                    max={12}
+                    value={fibN}
+                    onChange={(e) => setFibN(Math.min(12, Math.max(2, Number(e.target.value))))}
+                    className="w-16 px-2 py-1.5 rounded-xl border border-garden-cardborder bg-garden-bg text-garden-text font-mono focus:outline-none"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-garden-secondary">Target Amount ($):</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={coinAmount}
+                    onChange={(e) => setCoinAmount(Math.min(12, Math.max(1, Number(e.target.value))))}
+                    className="w-16 px-2 py-1.5 rounded-xl border border-garden-cardborder bg-garden-bg text-garden-text font-mono focus:outline-none"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Universal Playback Controls */}
-        <div className="flex items-center gap-2">
+        <div id="tour-playback-controls" className="flex items-center gap-2">
           <button
             onClick={() => setCurrentStepIdx((p) => Math.max(0, p - 1))}
             disabled={currentStepIdx === 0}
@@ -460,7 +542,10 @@ export const PlaygroundPage: React.FC = () => {
       </div>
 
       {/* Step Description Banner */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-garden-darkcard border border-garden-cardborder shadow-sm flex items-center justify-between gap-4">
+      <div
+        id="tour-step-narration"
+        className="p-4 rounded-2xl bg-white dark:bg-garden-darkcard border border-garden-cardborder shadow-sm flex items-center justify-between gap-4"
+      >
         <div className="flex items-center gap-3">
           <span className="px-3 py-1 rounded-full bg-dustyrose/30 text-garden-text font-mono text-xs font-bold">
             Step {currentStepIdx + 1} / {steps.length}
@@ -472,15 +557,43 @@ export const PlaygroundPage: React.FC = () => {
       </div>
 
       {/* Main Visualizer Stage */}
-      {activeLab === 'sorting' || activeLab === 'search' ? (
-        <ArrayBarVisualizer currentStep={currentStep} speedMs={speed} />
-      ) : activeLab === 'graph' ? (
-        <GraphVisualizer currentStep={currentStep} />
-      ) : activeLab === 'tree' ? (
-        <TreeVisualizer currentStep={currentStep} />
-      ) : (
-        <DpTableVisualizer currentStep={currentStep} />
-      )}
+      <div id="tour-visualizer" className="w-full">
+        {activeLab === 'sorting' || activeLab === 'search' ? (
+          <ArrayBarVisualizer currentStep={currentStep} speedMs={speed} />
+        ) : activeLab === 'graph' ? (
+          <GraphVisualizer currentStep={currentStep} />
+        ) : activeLab === 'tree' ? (
+          <TreeVisualizer currentStep={currentStep} />
+        ) : (
+          <DpTableVisualizer currentStep={currentStep} />
+        )}
+      </div>
+
+      {/* Interactive App-Style Guided Demo & Walkthrough Modal */}
+      <PlaygroundTourModal
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        activeLab={activeLab}
+        selectedSortAlgo={selectedSortAlgo}
+        selectedSearchAlgo={selectedSearchAlgo}
+        selectedGraphAlgo={selectedGraphAlgo}
+        treeAction={treeAction}
+        selectedDpProblem={selectedDpProblem}
+        onSelectSortAlgo={setSelectedSortAlgo}
+        onSelectSearchAlgo={setSelectedSearchAlgo}
+        onSelectGraphAlgo={setSelectedGraphAlgo}
+        onSelectTreeAction={setTreeAction}
+        onSelectDpProblem={setSelectedDpProblem}
+        onTriggerDemoPlay={() => {
+          setCurrentStepIdx(0);
+          setIsPlaying(true);
+        }}
+        onResetTrace={() => {
+          setIsPlaying(false);
+          setCurrentStepIdx(0);
+          soundService.playBubblePop();
+        }}
+      />
     </div>
   );
 };

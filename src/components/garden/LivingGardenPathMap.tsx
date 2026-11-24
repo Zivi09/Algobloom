@@ -44,9 +44,9 @@ export const LivingGardenPathMap: React.FC<LivingGardenPathMapProps> = ({
     { x: 320, y: 405, name: 'Lower Meadow Path', level: 0, subtitle: 'Variables & Seed Packets', flowerType: 'daisy' },
     { x: 251, y: 419, name: 'Data Structure Basin', level: 1, subtitle: 'Arrays & Memory Pots', flowerType: 'tulip' },
     { x: 178, y: 419, name: 'Pond Bank Walkway', level: 1, subtitle: 'Stacks & Queues', flowerType: 'tulip' },
-    { x: 98, y: 365, name: 'Linear Search Shore', level: 2, subtitle: 'Step-by-step river pebble search', flowerType: 'blossom' },
-    { x: 85, y: 295, name: 'Binary Search Curve', level: 2, subtitle: 'Halving the stepping stones', flowerType: 'blossom' },
-    { x: 78, y: 175, name: 'Sorting Meadow Ridge', level: 3, subtitle: 'Bubble & Selection Sort', flowerType: 'sunflower' },
+    { x: 104, y: 362, name: 'Linear Search Shore', level: 2, subtitle: 'Step-by-step river pebble search', flowerType: 'blossom' },
+    { x: 75, y: 285, name: 'Binary Search Curve', level: 2, subtitle: 'Halving the stepping stones', flowerType: 'blossom' },
+    { x: 75, y: 170, name: 'Sorting Meadow Ridge', level: 3, subtitle: 'Bubble & Selection Sort', flowerType: 'sunflower' },
     { x: 115, y: 145, name: 'Quick Sort Fork', level: 3, subtitle: 'Pivot & Partition Path', flowerType: 'sunflower' },
     { x: 176, y: 150, name: 'Complexity Ascent', level: 4, subtitle: 'Big-O Mountain Glade', flowerType: 'daisy' },
     { x: 244, y: 176, name: 'Recursion Glade', level: 5, subtitle: 'Mirrored Reflecting Pools', flowerType: 'lotus' },
@@ -297,23 +297,7 @@ export const LivingGardenPathMap: React.FC<LivingGardenPathMapProps> = ({
             </g>
           )}
 
-          {/* 2. LIVING ENERGY PATH OVERLAY (Precisely aligned to trail) */}
-          <path
-            d="M 372,447 C 350,430 335,410 320,405 C 295,405 270,415 251,419 C 220,422 195,422 178,419 C 140,410 115,395 98,365 C 85,340 82,315 85,295 C 88,240 70,200 78,175 C 85,155 100,145 115,145 C 135,145 155,148 176,150 C 200,158 225,168 244,176 C 265,185 285,195 302,203 C 325,212 345,218 366,220 C 390,228 412,238 433,250 C 465,268 495,276 519,280 C 545,285 565,290 583,294"
-            fill="none"
-            stroke="url(#livingTrailGradient)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray="5, 10"
-            className={animationsEnabled ? 'animate-pulse' : ''}
-            opacity="0.65"
-          >
-            {animationsEnabled && (
-              <animate attributeName="stroke-dashoffset" values="300; 0" dur="14s" repeatCount="indefinite" />
-            )}
-          </path>
-
-          {/* 3. WIND-BLOWN DRIFTING PETALS */}
+          {/* 2. WIND-BLOWN DRIFTING PETALS */}
           {animationsEnabled && (
             <g className="pointer-events-none">
               <g transform="translate(560, 240)">
@@ -359,7 +343,7 @@ export const LivingGardenPathMap: React.FC<LivingGardenPathMapProps> = ({
             </g>
           )}
 
-          {/* 4. 15 INTERACTIVE STEPPING STONES */}
+          {/* 3. 15 INTERACTIVE STEPPING STONES */}
           {PATH_WAYPOINTS.map((wp, i) => {
             const isPassed = i < activeWaypointIndex;
             const isCurrentRank = i === activeWaypointIndex;
@@ -384,56 +368,73 @@ export const LivingGardenPathMap: React.FC<LivingGardenPathMapProps> = ({
                 />
 
                 {/* Active Rank Pulse Aura under the stone */}
-                {isCurrentRank && animationsEnabled && (
+                {isCurrentRank && animationsEnabled && !isCharacterHere && (
                   <circle
                     cx={wp.x}
                     cy={wp.y}
-                    r="16"
+                    r="15"
                     fill="#F9A49E"
-                    opacity="0.4"
+                    opacity="0.38"
                     className="animate-ping pointer-events-none"
                     style={{ animationDuration: '2.8s' }}
                   />
                 )}
 
-                {/* Visible Stepping Stone Disc (pointer-events-none so animation never disrupts hit-testing) */}
-                <circle
-                  cx={wp.x}
-                  cy={wp.y}
-                  r={isCharacterHere ? 9.5 : isHovered ? 8.5 : 6.8}
-                  fill={
-                    isCurrentRank
-                      ? '#F9A49E'
-                      : isPassed
-                      ? '#FFAAA6'
-                      : isHovered
-                      ? '#FFEECB'
-                      : '#FAF6E8'
-                  }
-                  stroke={
-                    isCharacterHere
-                      ? '#74A250'
-                      : isCurrentRank
-                      ? '#DC6C66'
-                      : isPassed
-                      ? '#E2867F'
-                      : isHovered
-                      ? '#74A250'
-                      : '#D1C6AC'
-                  }
-                  strokeWidth={isCharacterHere ? '2.5' : isHovered ? '2' : '1.5'}
-                  className="transition-all duration-200 drop-shadow-sm pointer-events-none"
-                />
+                {/* Stepping Stone Disc: when Sprout is here, show a soft blooming ground ring so Sprout stands cleanly without disc clutter */}
+                {isCharacterHere ? (
+                  animationsEnabled && (
+                    <circle
+                      cx={wp.x}
+                      cy={wp.y}
+                      r="12"
+                      fill="none"
+                      stroke="#8ABF44"
+                      strokeWidth="1.6"
+                      strokeDasharray="3, 3"
+                      opacity="0.75"
+                      className="pointer-events-none animate-spin"
+                      style={{ animationDuration: '12s' }}
+                    />
+                  )
+                ) : (
+                  <>
+                    <circle
+                      cx={wp.x}
+                      cy={wp.y}
+                      r={isHovered ? 8.5 : 6.8}
+                      fill={
+                        isCurrentRank
+                          ? '#F9A49E'
+                          : isPassed
+                          ? '#FFAAA6'
+                          : isHovered
+                          ? '#FFEECB'
+                          : '#FAF6E8'
+                      }
+                      stroke={
+                        isCurrentRank
+                          ? '#DC6C66'
+                          : isPassed
+                          ? '#E2867F'
+                          : isHovered
+                          ? '#74A250'
+                          : '#D1C6AC'
+                      }
+                      strokeWidth={isHovered ? '2' : '1.5'}
+                      className="transition-all duration-200 drop-shadow-sm pointer-events-none"
+                    />
 
-                {/* Bloomed Flower Core on Passed Stones */}
-                {isPassed && (
-                  <g transform={`translate(${wp.x}, ${wp.y})`} className="pointer-events-none">
-                    <circle cx="0" cy="0" r="2.5" fill="#FFE39A" />
-                    <circle cx="-3" cy="0" r="1" fill="#FFFFFF" opacity="0.9" />
-                    <circle cx="3" cy="0" r="1" fill="#FFFFFF" opacity="0.9" />
-                    <circle cx="0" cy="-3" r="1" fill="#FFFFFF" opacity="0.9" />
-                    <circle cx="0" cy="3" r="1" fill="#FFFFFF" opacity="0.9" />
-                  </g>
+                    {/* Bloomed Flower Core on Passed Stones */}
+                    {isPassed && (
+                      <g transform={`translate(${wp.x}, ${wp.y})`} className="pointer-events-none">
+                        <circle cx="0" cy="0" r="2.5" fill="#FFE39A" />
+                        <circle cx="-3" cy="0" r="1" fill="#FFFFFF" opacity="0.9" />
+                        <circle cx="3" cy="0" r="1" fill="#FFFFFF" opacity="0.9" />
+                        <circle cx="0" cy="-3" r="1" fill="#FFFFFF" opacity="0.9" />
+                        <circle cx="0" cy="3" r="1" fill="#FFFFFF" opacity="0.9" />
+                      </g>
+                    )}
+                  </>
                 )}
               </g>
             );

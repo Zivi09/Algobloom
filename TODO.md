@@ -12,10 +12,13 @@ This file tracks all ongoing, planned, and completed tasks for AlgoBloom. Agents
   - *Implementation Details:*
     - Created `LivingGardenPathMap.tsx` and integrated into `LearningPathPage.tsx`.
     - Handcrafted pure vector SVG `SproutAvatar.tsx` (infinitely sharp, anime catchlight eyes, watercolor gradient shading, gardener overalls, brass buttons, held pearl stone, and breeze-swaying leaves).
-    - Executed precise, seamless OpenCV Telea inpainting on the background map (`public/sprout-garden-path-clean.jpg`) — fully eliminated leaf tips residue and smudges with 100% preservation of surrounding trees and meadow.
-    - [x] Removed artificial flat SVG bands and balloon trees from the right side; composited genuine hand-painted watercolor trees and rolling green hills matching the paper texture, watercolor brushwork, and palette of the left side.
-    - [x] Corrected all 15 milestone waypoint coordinates to lie directly on the cobblestone trail and pink stepping stone centroids (calibrated from image pixel analysis).
+    - [x] Executed texture synthesis healing on the background map (`public/sprout-garden-path-clean.jpg` and `dist/sprout-garden-path-clean.jpg`) — 100% eliminated the pink/salmon smudge (0 residual pink pixels in former head/body area) with pristine preservation of surrounding trees and meadow.
+    - [x] Replaced artificial blurred/patchy stamps on the right side with an organic watercolor hill wash that continues naturally across the top right, paired with alpha-matted watercolor companion trees and lower meadow shrubs with zero box halos.
+    - [x] Calibrated all 15 milestone waypoint coordinates (WP 0 through WP 14) so every single milestone lies 100% centered on the genuine cobblestone trail.
+    - [x] Removed artificial neon dashed path wire that was cutting across grass and flower petals, letting the authentic hand-painted watercolor cobblestones shine cleanly.
+    - [x] Refined milestone stepping stone aesthetics: eliminated the awkward disc directly under Sprout's feet (Sprout now stands cleanly on a gentle rotating bloom ring), and gave all stones a soft watercolor pearl look with flower blossom cores on completed steps.
     - [x] Fixed top-left popup bug: replaced transform-colliding CSS animation with safe `animate-svgFadeIn` and added boundary-aware viewport clamping so tooltips never clip off-screen.
+    - [x] Eliminated hover flickering with stationary, generous `r=20` invisible hit targets.
     - [x] Sprout character is fully dynamic and positioned directly at the learner's active rank / milestone.
     - [x] Smooth walking animation (`transition: transform 0.8s cubic-bezier(0.34, 1.3, 0.64, 1)`) along the 15 trail stepping stones when current rank changes or when clicking any destination.
     - [x] Idle breathing bounce + stepping foot hop + dynamic ground contact shadow.
@@ -23,6 +26,32 @@ This file tracks all ongoing, planned, and completed tasks for AlgoBloom. Agents
     - [x] Interactive Sprout dialogue on click with cheerful encouraging tips and Web Audio chime chirps.
     - [x] "Snap to Rank" button in the toolbar when exploring other waypoints.
     - [x] Living pond water ripples and drifting wind-blown watercolor petals.
+
+- [x] **Task 9: Interactive App-Style Guided Demo & Walkthrough System (Completed)**
+  - *Assigned:* Lead UI/UX & Pedagogy Engineer
+  - *Completed Date:* 2026-11-23
+  - *Implementation Details:*
+    - Created `src/components/playground/PlaygroundTourModal.tsx` and `src/components/playground/playgroundDemoData.ts`.
+    - **App-Style Spotlight & Anchored Walkthrough:**
+      - Darkened backdrop overlay with dynamic SVG cutout and glowing rose focus ring (`ring-4 ring-dustyrose-400` + box shadow) centered directly on the active target element.
+      - Smooth auto-scrolls target elements into viewport center if offscreen.
+      - 6 interactive guided steps:
+        1. *Lab Mode Switcher* (`#tour-lab-tabs`): Explaining all 5 computer science sandboxes (Sorting, Graph, Tree, Search, DP).
+        2. *Algorithm Spotlight & Intuitive Mechanics* (`#tour-algo-select`): Deep explanation tailored to every single algorithm (real-world metaphors, step mechanics, Big-O complexities, and in-tour algorithm switcher).
+        3. *Presets, Inputs & Parameters* (`#tour-input-controls`): Explaining Random, Nearly Sorted, Reversed, and custom value inputs.
+        4. *Step-by-Step Playback Engine* (`#tour-playback-controls`): Explaining Step Back, Play/Pause, Step Forward, and Reset buttons, plus a **"▶ Run Live Mini-Demo"** button that runs 4 steps live on screen.
+        5. *Step Commentary & Metrics* (`#tour-step-narration`): Highlighting real-time operation counters, plain-English narrations, and Web Audio acoustic chimes.
+        6. *The Living Visualizer Stage* (`#tour-visualizer`): Reading the physical animation (FLIP swap arcs, node dragging, DP tables, and color meanings).
+    - **Covers All Algorithms Across All 5 Labs:**
+      - Sorting: Bubble, Selection, Insertion, Merge, Quick Sort.
+      - Searching: Binary Search, Linear Search.
+      - Graphs: BFS, DFS, Dijkstra's Shortest Path.
+      - Trees: BST Search, Inorder, Preorder, Postorder Traversals.
+      - Dynamic Programming: Fibonacci numbers, Coin Change minimum coins.
+    - **Mobile & Desktop Controls:**
+      - Step indicator dots, Previous / Next navigation, Skip / Close button (`✕`), and keyboard shortcuts (`Esc` to close, `ArrowRight`/`ArrowLeft` to navigate).
+      - Prominent **"✨ Interactive Demo & Tour"** button in playground header with pulsing badge, plus direct `(?)` help triggers on the algorithm selector.
+    - Clean production build (`npm run build`) passing with 0 TypeScript/JSX errors.
 
 - [ ] **Task 2: Synchronized Code-Line Execution Stepper (Planned)**
   - *Description:* Dual-view synchronizer highlighting the exact line of code (Python/JS) as each algorithm trace step advances in LessonDetailPage.

@@ -9,6 +9,81 @@ interface AlgoBuddyProps {
   customGreeting?: string;
 }
 
+// Format message text with markdown bold (**text**), code (`code`), italic (*text*), and bullet points
+const formatMessageText = (text: string) => {
+  const lines = text.split('\n');
+
+  return (
+    <div className="space-y-1.5 leading-relaxed">
+      {lines.map((line, lineIdx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={lineIdx} className="h-1.5" />;
+        }
+
+        const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-');
+        const cleanLine = isBullet ? trimmed.replace(/^[•\-]\s*/, '') : line;
+
+        // Parse inline tokens: **bold**, `code`, *italic*
+        const parts: React.ReactNode[] = [];
+        const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g;
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+
+        while ((match = tokenRegex.exec(cleanLine)) !== null) {
+          if (match.index > lastIndex) {
+            parts.push(cleanLine.substring(lastIndex, match.index));
+          }
+
+          const token = match[0];
+          if (token.startsWith('**') && token.endsWith('**')) {
+            parts.push(
+              <strong
+                key={`${lineIdx}-${match.index}`}
+                className="font-bold text-garden-text dark:text-garden-darktext"
+              >
+                {token.slice(2, -2)}
+              </strong>
+            );
+          } else if (token.startsWith('`') && token.endsWith('`')) {
+            parts.push(
+              <code
+                key={`${lineIdx}-${match.index}`}
+                className="px-1.5 py-0.5 mx-0.5 rounded-md bg-black/10 dark:bg-white/15 font-mono text-[11px] font-semibold text-garden-text dark:text-garden-darktext"
+              >
+                {token.slice(1, -1)}
+              </code>
+            );
+          } else if (token.startsWith('*') && token.endsWith('*')) {
+            parts.push(
+              <em key={`${lineIdx}-${match.index}`} className="italic">
+                {token.slice(1, -1)}
+              </em>
+            );
+          }
+
+          lastIndex = tokenRegex.lastIndex;
+        }
+
+        if (lastIndex < cleanLine.length) {
+          parts.push(cleanLine.substring(lastIndex));
+        }
+
+        if (isBullet) {
+          return (
+            <div key={lineIdx} className="flex items-start gap-2 pl-1 my-0.5">
+              <span className="text-dustyrose font-bold select-none leading-5 text-sm">•</span>
+              <span className="flex-1">{parts}</span>
+            </div>
+          );
+        }
+
+        return <p key={lineIdx}>{parts}</p>;
+      })}
+    </div>
+  );
+};
+
 export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
   currentLessonId,
   currentLessonTitle,
@@ -41,7 +116,7 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
     },
   ]);
 
-  // Update greeting and suggestions when currentLessonTitle changes
+  // Update suggestions when currentLessonTitle changes
   useEffect(() => {
     if (currentLessonTitle) {
       setActiveFollowUps([
@@ -227,13 +302,13 @@ export const AlgoBuddy: React.FC<AlgoBuddyProps> = ({
                     <div className="shrink-0 mt-0.5">{renderBuddyFace(msg.expression || 'happy', 26)}</div>
                   )}
                   <div
-                    className={`p-3.5 rounded-2xl max-w-[85%] leading-relaxed whitespace-pre-line ${
+                    className={`p-3.5 rounded-2xl max-w-[85%] leading-relaxed ${
                       msg.sender === 'user'
                         ? 'bg-dustyrose text-garden-text rounded-tr-none font-medium'
                         : 'bg-garden-bg/60 dark:bg-garden-darkbg/70 border border-garden-cardborder/60 dark:border-garden-darkcardborder/60 text-garden-text dark:text-garden-darktext rounded-tl-none'
                     }`}
                   >
-                    <p>{msg.text}</p>
+                    {formatMessageText(msg.text)}
                     {msg.code && (
                       <pre className="mt-2.5 p-2.5 rounded-xl bg-black/10 dark:bg-black/40 font-mono text-[11px] overflow-x-auto text-garden-text dark:text-garden-darktext border border-black/5">
                         <code>{msg.code}</code>

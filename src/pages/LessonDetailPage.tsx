@@ -39,9 +39,21 @@ import {
   generateMergeSortTrace,
   generateQuickSortTrace,
 } from '../algorithms/traces/sortTraces';
-import { generateBfsTrace, generateDfsTrace, generateDijkstraTrace } from '../algorithms/traces/graphTraces';
-import { generateBstSearchTrace } from '../algorithms/traces/treeTraces';
+import {
+  generateBfsTrace,
+  generateDfsTrace,
+  generateDijkstraTrace,
+  DEFAULT_GRAPH,
+  GraphData,
+} from '../algorithms/traces/graphTraces';
+import {
+  generateBstSearchTrace,
+  buildBstFromValues,
+  TreeData,
+  DEFAULT_BST,
+} from '../algorithms/traces/treeTraces';
 import { generateFibonacciDpTrace } from '../algorithms/traces/dpTraces';
+import { generateWhatIsAlgorithmTrace, generateBigOTrace } from '../algorithms/traces/conceptTraces';
 import { ProgressService } from '../services/progressService';
 
 interface LessonDetailPageProps {
@@ -70,11 +82,31 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
   const [activeCodeLang, setActiveCodeLang] = useState<'python' | 'javascript' | 'cpp' | 'java'>('python');
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // State: Try It Yourself custom input
-  const [customArrayInput, setCustomArrayInput] = useState(
-    Array.isArray(lesson.defaultInput) ? lesson.defaultInput.join(', ') : '29, 10, 45, 12, 85, 32'
-  );
-  const [customTargetInput, setCustomTargetInput] = useState('42');
+  // State: Try It Yourself custom inputs across all algorithms
+  const getDefaultArrayInput = (curLesson: AlgorithmLesson) => {
+    if (Array.isArray(curLesson.defaultInput) && curLesson.defaultInput.length > 0) {
+      return curLesson.defaultInput.join(', ');
+    }
+    if (curLesson.id === 'binary-search-tree') {
+      return '50, 30, 70, 20, 40, 60, 85';
+    }
+    return '14, 29, 8, 42, 19, 31, 5, 23';
+  };
+
+  const getDefaultTargetInput = (curLesson: AlgorithmLesson) => {
+    if (curLesson.id === 'binary-search-tree') return '60';
+    return '42';
+  };
+
+  const [customArrayInput, setCustomArrayInput] = useState(() => getDefaultArrayInput(lesson));
+  const [customTargetInput, setCustomTargetInput] = useState(() => getDefaultTargetInput(lesson));
+  const [customStartNode, setCustomStartNode] = useState<string>('A');
+  const [customDpN, setCustomDpN] = useState<number>(7);
+  const [customWhatOp, setCustomWhatOp] = useState<'max' | 'sum' | 'count_even'>('max');
+  const [customBigOComplexity, setCustomBigOComplexity] = useState<'O(1)' | 'O(log n)' | 'O(n)' | 'O(n^2)'>('O(n)');
+  const [customTreeData, setCustomTreeData] = useState<TreeData>(DEFAULT_BST);
+  const [customFeedback, setCustomFeedback] = useState<string | null>(null);
+  const visualizerSectionRef = useRef<HTMLDivElement>(null);
 
   // State: Execution Trace
   const [traceSteps, setTraceSteps] = useState<TraceStep[]>([]);
@@ -159,10 +191,32 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
   const [relearnModalOpen, setRelearnModalOpen] = useState(false);
   const [miniQuizAnswers, setMiniQuizAnswers] = useState<Record<number, number>>({});
 
-  // Generate deterministic trace based on algorithm ID
-  const generateTrace = (arr?: number[], targetVal?: number) => {
-    const rawArr = arr || (Array.isArray(lesson.defaultInput) ? [...lesson.defaultInput] : [45, 12, 85, 32, 89, 39]);
-    const target = targetVal !== undefined ? targetVal : 42;
+  // Generate deterministic trace based on algorithm ID and custom inputs
+  const generateTrace = (options?: {
+    arr?: number[];
+    targetVal?: number;
+    startNode?: string;
+    dpN?: number;
+    treeData?: TreeData;
+    whatOp?: 'max' | 'sum' | 'count_even';
+    bigOComplexity?: 'O(1)' | 'O(log n)' | 'O(n)' | 'O(n^2)';
+  }) => {
+    const rawArr =
+      options?.arr ||
+      (Array.isArray(lesson.defaultInput) && lesson.defaultInput.length > 0
+        ? [...lesson.defaultInput]
+        : [14, 29, 8, 42, 19, 31, 5, 23]);
+    const target =
+      options?.targetVal !== undefined
+        ? options.targetVal
+        : isNaN(Number(customTargetInput.trim()))
+        ? 42
+        : Number(customTargetInput.trim());
+    const startNode = options?.startNode || customStartNode || 'A';
+    const dpN = options?.dpN !== undefined ? options.dpN : customDpN;
+    const tree = options?.treeData || customTreeData || DEFAULT_BST;
+    const whatOp = options?.whatOp || customWhatOp || 'max';
+    const bigOComp = options?.bigOComplexity || customBigOComplexity || 'O(n)';
 
     switch (lesson.id) {
       case 'linear-search':
@@ -180,45 +234,52 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
       case 'quick-sort':
         return generateQuickSortTrace(rawArr);
       case 'breadth-first-search':
-        return generateBfsTrace();
+        return generateBfsTrace(DEFAULT_GRAPH, startNode);
       case 'depth-first-search':
-        return generateDfsTrace();
+        return generateDfsTrace(DEFAULT_GRAPH, startNode);
       case 'dijkstra':
-        return generateDijkstraTrace();
+        return generateDijkstraTrace(DEFAULT_GRAPH, startNode);
       case 'binary-search-tree':
-        return generateBstSearchTrace();
+        return generateBstSearchTrace(tree, target);
       case 'dp-fibonacci':
-        return generateFibonacciDpTrace(7);
+        return generateFibonacciDpTrace(dpN);
+      case 'what-is-an-algorithm':
+        return generateWhatIsAlgorithmTrace(rawArr, whatOp);
+      case 'big-o-notation':
+      case 'big-o':
+        return generateBigOTrace(rawArr.length || 8, bigOComp, rawArr);
       default:
-        // Default conceptual trace
-        return [
-          {
-            step: 0,
-            description: `Concept demonstration for ${lesson.title}. Ready to trace instructions.`,
-            array: rawArr,
-            activeLine: 1,
-          },
-          {
-            step: 1,
-            description: `Analyzing inputs and preconditions for ${lesson.title}.`,
-            array: rawArr,
-            activeLine: 2,
-          },
-          {
-            step: 2,
-            description: `Executing deterministic step sequence for ${lesson.title}.`,
-            array: rawArr,
-            activeLine: 3,
-            isComplete: true,
-          },
-        ];
+        return generateWhatIsAlgorithmTrace(rawArr, 'max');
     }
   };
 
-  // Initialize Trace
+  // Initialize Trace and synchronize states when lesson changes
   useEffect(() => {
     progressService.startLesson(lesson.id, lesson.flowerType);
-    const initialTrace = generateTrace();
+    const newArrStr = getDefaultArrayInput(lesson);
+    const newTargetStr = getDefaultTargetInput(lesson);
+    setCustomArrayInput(newArrStr);
+    setCustomTargetInput(newTargetStr);
+    setCustomStartNode('A');
+    setCustomDpN(7);
+    setCustomWhatOp('max');
+    setCustomBigOComplexity('O(n)');
+    const initialTree =
+      lesson.id === 'binary-search-tree'
+        ? buildBstFromValues([50, 30, 70, 20, 40, 60, 85])
+        : DEFAULT_BST;
+    setCustomTreeData(initialTree);
+    setCustomFeedback(null);
+
+    const initialTrace = generateTrace({
+      arr: Array.isArray(lesson.defaultInput) ? [...lesson.defaultInput] : undefined,
+      targetVal: isNaN(Number(newTargetStr)) ? 42 : Number(newTargetStr),
+      startNode: 'A',
+      dpN: 7,
+      treeData: initialTree,
+      whatOp: 'max',
+      bigOComplexity: 'O(n)',
+    });
     setTraceSteps(initialTrace);
     setCurrentStepIdx(0);
     setIsPlaying(false);
@@ -226,6 +287,10 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
   }, [lesson.id]);
 
   // Active prediction challenge calculation
+  const parsedTargetForChallenge = isNaN(Number(customTargetInput.trim()))
+    ? 42
+    : Number(customTargetInput.trim());
+
   const activeChallenge: PredictionChallenge | null =
     predictMode && traceSteps.length > 0 && currentStepIdx < traceSteps.length
       ? getPredictionForStep(
@@ -234,7 +299,7 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
           lesson,
           currentStepIdx,
           traceSteps,
-          Number(customTargetInput.trim()) || 42
+          parsedTargetForChallenge
         )
       : null;
 
@@ -320,23 +385,121 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
     soundService.playBubblePop();
   };
 
-  const handleApplyCustomInput = () => {
+  const handleApplyCustomInput = (overrides?: {
+    arr?: number[];
+    targetVal?: number;
+    startNode?: string;
+    dpN?: number;
+    whatOp?: 'max' | 'sum' | 'count_even';
+    bigOComplexity?: 'O(1)' | 'O(log n)' | 'O(n)' | 'O(n^2)';
+  }) => {
     try {
+      let parsedArr = overrides?.arr;
+      if (!parsedArr) {
+        parsedArr = customArrayInput
+          .split(',')
+          .map((s) => Number(s.trim()))
+          .filter((n) => !isNaN(n));
+        if (parsedArr.length === 0) {
+          parsedArr = [14, 29, 8, 42, 19, 31, 5, 23];
+        }
+      }
+
+      const targetVal =
+        overrides?.targetVal !== undefined
+          ? overrides.targetVal
+          : isNaN(Number(customTargetInput.trim()))
+          ? 42
+          : Number(customTargetInput.trim());
+
+      const startNode = overrides?.startNode || customStartNode || 'A';
+      const dpN = overrides?.dpN !== undefined ? overrides.dpN : customDpN;
+      const whatOp = overrides?.whatOp || customWhatOp || 'max';
+      const bigOComp = overrides?.bigOComplexity || customBigOComplexity || 'O(n)';
+
+      let nextTree = customTreeData;
+      if (lesson.id === 'binary-search-tree') {
+        nextTree = buildBstFromValues(parsedArr);
+        setCustomTreeData(nextTree);
+      }
+
+      const newTrace = generateTrace({
+        arr: parsedArr,
+        targetVal,
+        startNode,
+        dpN,
+        treeData: nextTree,
+        whatOp,
+        bigOComplexity: bigOComp,
+      });
+
+      setTraceSteps(newTrace);
+      setCurrentStepIdx(0);
+      setIsPlaying(false);
+      setAnsweredChallenges(new Set());
+      soundService.playBubblePop();
+
+      setCustomFeedback('Custom trace generated & visualizer updated! ✨');
+      setTimeout(() => setCustomFeedback(null), 3500);
+
+      visualizerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) {
+      console.warn('Invalid custom input', e);
+    }
+  };
+
+  // Preset helpers for Quick Input controls
+  const handleSortPreset = (type: 'random' | 'reversed' | 'nearly' | 'duplicates') => {
+    let arr: number[] = [];
+    if (type === 'random') {
+      arr = Array.from({ length: 8 }, () => Math.floor(Math.random() * 85) + 10);
+    } else if (type === 'reversed') {
+      arr = [89, 75, 62, 48, 35, 21, 10];
+    } else if (type === 'nearly') {
+      arr = [12, 19, 28, 35, 31, 52, 68];
+    } else {
+      arr = [30, 15, 30, 45, 15, 30, 45];
+    }
+    const str = arr.join(', ');
+    setCustomArrayInput(str);
+    handleApplyCustomInput({ arr });
+  };
+
+  const handleSearchPreset = (type: 'present' | 'absent' | 'random') => {
+    if (type === 'random') {
+      const arr = Array.from({ length: 8 }, () => Math.floor(Math.random() * 85) + 10);
+      const target = arr[Math.floor(Math.random() * arr.length)];
+      setCustomArrayInput(arr.join(', '));
+      setCustomTargetInput(String(target));
+      handleApplyCustomInput({ arr, targetVal: target });
+    } else if (type === 'present') {
       const parsedArr = customArrayInput
         .split(',')
         .map((s) => Number(s.trim()))
         .filter((n) => !isNaN(n));
-      const targetVal = Number(customTargetInput.trim()) || 42;
+      const target = parsedArr.length > 0 ? parsedArr[Math.floor(parsedArr.length / 2)] : 42;
+      setCustomTargetInput(String(target));
+      handleApplyCustomInput({ targetVal: target });
+    } else {
+      setCustomTargetInput('99');
+      handleApplyCustomInput({ targetVal: 99 });
+    }
+  };
 
-      if (parsedArr.length >= 2) {
-        const newTrace = generateTrace(parsedArr, targetVal);
-        setTraceSteps(newTrace);
-        setCurrentStepIdx(0);
-        setIsPlaying(false);
-        setAnsweredChallenges(new Set());
-      }
-    } catch (e) {
-      console.warn('Invalid custom input');
+  const handleTreePreset = (type: 'balanced' | 'skewed' | 'missing') => {
+    if (type === 'balanced') {
+      const arr = [50, 30, 70, 20, 40, 60, 85];
+      setCustomArrayInput(arr.join(', '));
+      setCustomTargetInput('60');
+      handleApplyCustomInput({ arr, targetVal: 60 });
+    } else if (type === 'skewed') {
+      const arr = [70, 50, 40, 30, 20];
+      setCustomArrayInput(arr.join(', '));
+      setCustomTargetInput('30');
+      handleApplyCustomInput({ arr, targetVal: 30 });
+    } else {
+      setCustomTargetInput('25');
+      handleApplyCustomInput({ targetVal: 25 });
     }
   };
 
@@ -393,10 +556,25 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
   // Render Visualizer depending on category
   const renderVisualizerArea = () => {
     if (lesson.category === 'Graphs' || lesson.category === 'Shortest Path') {
-      return <GraphVisualizer currentStep={currentStep} />;
+      return (
+        <GraphVisualizer
+          currentStep={currentStep}
+          graph={DEFAULT_GRAPH}
+          onNodeClick={(nodeId) => {
+            setCustomStartNode(nodeId);
+            handleApplyCustomInput({ startNode: nodeId });
+          }}
+        />
+      );
     }
     if (lesson.category === 'Trees') {
-      return <TreeVisualizer currentStep={currentStep} />;
+      return (
+        <TreeVisualizer
+          currentStep={currentStep}
+          tree={customTreeData}
+          target={isNaN(Number(customTargetInput.trim())) ? 42 : Number(customTargetInput.trim())}
+        />
+      );
     }
     if (lesson.category === 'Dynamic Programming') {
       return <DpTableVisualizer currentStep={currentStep} />;
@@ -600,7 +778,7 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
       {/* ================================================== */}
       {/* SECTION 6: THE INTERACTIVE VISUALIZATION ENGINE    */}
       {/* ================================================== */}
-      <section className="flex flex-col gap-4">
+      <section ref={visualizerSectionRef} id="interactive-visualizer" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">✨</span>
@@ -790,7 +968,7 @@ export const LessonDetailPage: React.FC<LessonDetailPageProps> = ({
           )}
 
           <button
-            onClick={handleApplyCustomInput}
+            onClick={() => handleApplyCustomInput()}
             className="px-4 py-2 rounded-xl bg-dustyrose text-garden-text font-semibold hover:bg-dustyrose-400 transition-colors shadow-sm"
           >
             Run Custom Trace

@@ -27,6 +27,80 @@ export const DEFAULT_BST: TreeData = {
   },
 };
 
+export function buildBstFromValues(values: number[]): TreeData {
+  if (!values || values.length === 0) return DEFAULT_BST;
+  // unique values up to 10 for clean display in canvas
+  const unique = Array.from(new Set(values.filter((v) => !isNaN(v)))).slice(0, 10);
+  if (unique.length === 0) return DEFAULT_BST;
+
+  interface BSTInternalNode {
+    val: number;
+    id: string;
+    left?: BSTInternalNode;
+    right?: BSTInternalNode;
+    depth: number;
+    x: number;
+    y: number;
+  }
+
+  const root: BSTInternalNode = { val: unique[0], id: String(unique[0]), depth: 0, x: 280, y: 50 };
+
+  for (let i = 1; i < unique.length; i++) {
+    const val = unique[i];
+    let curr = root;
+    let depth = 0;
+    while (true) {
+      depth++;
+      if (val < curr.val) {
+        if (!curr.left) {
+          curr.left = { val, id: String(val), depth, x: 0, y: 50 + depth * 55 };
+          break;
+        }
+        curr = curr.left;
+      } else {
+        if (!curr.right) {
+          curr.right = { val, id: String(val), depth, x: 0, y: 50 + depth * 55 };
+          break;
+        }
+        curr = curr.right;
+      }
+      if (depth >= 4) break;
+    }
+  }
+
+  let order = 0;
+  function layout(node?: BSTInternalNode) {
+    if (!node) return;
+    layout(node.left);
+    order++;
+    node.x = Math.round(50 + (order * 460) / (unique.length + 1));
+    node.y = Math.min(235, 50 + node.depth * 50);
+    layout(node.right);
+  }
+  layout(root);
+
+  const nodes: Record<string, TreeNodeData> = {};
+  function populate(node?: BSTInternalNode) {
+    if (!node) return;
+    nodes[node.id] = {
+      id: node.id,
+      value: node.val,
+      left: node.left ? node.left.id : undefined,
+      right: node.right ? node.right.id : undefined,
+      x: node.x,
+      y: node.y,
+    };
+    populate(node.left);
+    populate(node.right);
+  }
+  populate(root);
+
+  return {
+    rootId: root.id,
+    nodes,
+  };
+}
+
 export function generateBstSearchTrace(tree: TreeData = DEFAULT_BST, target: number = 60): TraceStep[] {
   const steps: TraceStep[] = [];
   let currId: string | undefined = tree.rootId;
